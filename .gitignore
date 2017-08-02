@@ -1,2 +1,4 @@
 testCodebase/*.out
 testCodebase/*.class
+testCodebase/*/*.out
+testCodebase/*/*.class
