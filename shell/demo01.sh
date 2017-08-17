@@ -68,3 +68,32 @@ done
 ################################################
 # touch file{1..10}
 # touch file{1,2,3,4} # can't space character between comma and digit(e.g. 1,2) or else wrongly think that will create several files(e.g. touch file{1, 2} --> file1: file{1,file2: 2})
+
+select color in red green blue gray pink quit
+do
+	if [[ $color == quit ]]
+	then
+		break
+	fi
+	echo -n "your number of choice is $REPLY, "
+	echo "color is $color"
+#	break # you can select only once, or immensely do.
+done
+
+# REPLY save the value when `read`has no parameter
+
+a=(1 2 3 4)
+for i in ${a[*]}
+do
+	echo -n "$i "
+done
+echo
+
+aa=([1]=12 [4]=34 [2]=100 [10]=11 111 1111)
+for i in ${aa[*]}
+do
+	echo -n "$i "
+	sleep 1
+done
+echo
+
