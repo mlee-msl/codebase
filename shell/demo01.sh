@@ -4,7 +4,7 @@ while true # while :
 do
 	read -p 'Username> ' username
 	read -s -p 'Password> ' password
-	if [ $username == 'MLee' -a $password == 'MLee' ]
+	if [[ $username = 'MLee' && $password = 'MLee' ]]
 	then
 		echo -e '\n***************' # echo * --> show content of the current directory
 		echo 'Welcome -^_^-'
@@ -14,7 +14,7 @@ do
 		echo -e "\n***************"
 		echo 'incorrect(username Or password) _~_~_'
 		echo '***************'
-		read -p 'Press any key to continue.'
+		read -n 1 -p 'Press any key to continue...'
 		clear
 	fi
 done
@@ -80,7 +80,7 @@ do
 #	break # you can select only once, or immensely do.
 done
 
-# REPLY save the value when `read`has no parameter
+# REPLY save the value when `read` has no parameter
 
 a=(1 2 3 4)
 for i in ${a[*]}
