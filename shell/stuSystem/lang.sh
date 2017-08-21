@@ -1,5 +1,9 @@
 #!/bin/bash
 
+##########################
+#########language#########
+##########################
+
 #print
 print1=(学生成绩管理系统 增加学生记录 修改学生记录 删除学生记录 查询学生记录 排列学生记录 退出系统 '请输入操作编号> ' '无效的操作编号' '按任意键继续...')
 print2=('Student Score Management System' 'Insert Student Record' 'Modify Student Record' 'Delete Student Record' 'Query Student Record' 'Sort Student Record' 'Quit' 'Please type number> ' 'Invalid number' 'Press any key to continue...')
