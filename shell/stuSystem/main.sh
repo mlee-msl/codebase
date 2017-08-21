@@ -151,9 +151,6 @@ insert()
 					done
 					read -p "${INSERT[15]}?(y/n)> " flag1
 					if [[ $flag1 = y ]]; then
-#						stuInfo[${#stuInfo[*]}]=`date +%F`
-						d=`date +%F`/`date +%X`
-						echo -e "$sNo\t${stuInfo[0]}\t${stuInfo[1]}\t${stuInfo[2]}\t$d" >> ./stuInfo.txt
 						while :; do
 							echo -e "******************\e[32;1m${INSERT[16]}($sNo)${INSERT[17]}\e[0m******************"
 							echo -e "\e[31;1m${INSERT[18]}:(\e[32;1m${INSERT[19]} ${INSERT[20]} ${INSERT[21]}\e[31;1m)[${INSERT[22]}]\e[33;1m${INSERT[23]}: \e[32;1m80 92 85\e[0m"
@@ -161,6 +158,9 @@ insert()
 								read -p "> " -a stuRecord
 								if [[ ${#stuRecord[*]} < 3 ]]; then
 									echo -e "\e[31;1m${INSERT[24]}\e[0m"
+									continue
+								elif [[ ${stuRecord[0]} == *[!0-9]* || ${stuRecord[1]} == *[!0-9]* || ${stuRecord[2]} == *[!0-9]* ]]; then
+									echo -e "\e[31;1m${INSERT[33]}\e[0m"
 									continue
 								elif [[ ${stuRecord[0]} -gt 100 || ${stuRecord[1]} -gt 100 || ${stuRecord[2]} -gt 100 ]]; then
 									echo -e "\e[31;1m${INSERT[25]}\e[0m"
@@ -177,6 +177,7 @@ insert()
 #								stuRecord[${#stuRecord[*]}]=$(date +%F)
 								let "avg=(stuRecord[0]+stuRecord[1]+stuRecord[2])/3"
 								d=`date +%F`/`date +%X`
+								echo -e "$sNo\t${stuInfo[0]}\t${stuInfo[1]}\t${stuInfo[2]}\t$d" >> ./stuInfo.txt
 								echo -e "$sNo\t${stuInfo[0]}\t${stuRecord[0]}\t${stuRecord[1]}\t${stuRecord[2]}\t$avg\t$d" >> ./stuRecord.txt
 								echo -e "\e[33;1m${INSERT[28]}\e[0m"
 								break
@@ -252,6 +253,9 @@ modify()
 						read -p "> " -a stuRecord
 						if [[ ${#stuRecord[*]} < 3 ]]; then
 							echo -e "\e[31;1m${MODIFY[14]}\e[0m"
+							continue
+						elif [[ ${stuRecord[0]} == *[!0-9]* || ${stuRecord[1]} == *[!0-9]* || ${stuRecord[2]} == *[!0-9]* ]]; then
+							echo -e "\e[31;1m${MODIFY[22]}\e[0m"
 							continue
 						elif [[ ${stuRecord[0]} -gt 100 || ${stuRecord[1]} -gt 100 || ${stuRecord[2]} -gt 100 ]]; then
 							echo -e "\e[31;1m${MODIFY[15]}\e[0m"

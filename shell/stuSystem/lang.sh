@@ -5,13 +5,13 @@ print1=(学生成绩管理系统 增加学生记录 修改学生记录 删除学
 print2=('Student Score Management System' 'Insert Student Record' 'Modify Student Record' 'Delete Student Record' 'Query Student Record' 'Sort Student Record' 'Quit' 'Please type number> ' 'Invalid number' 'Press any key to continue...')
 
 #insert
-insert1=('插入' '退出' '插入' '请输入学号' '学号为4位' '插入学生' '信息' '格式' '姓名' '性别' '班级' '举例' '张三' '男' '输入应有3个字段' '是否确定' '插入学生' '记录' '格式' '数据库' 'C语言' '数据结构' '百分制' '举例' '输入应有3个字段' '成绩为百分制' '成绩为非负数' '是否确定' '插入成功' '该学生' '已存在' '退出' '无效选择')
-insert2=('Insert' 'Quit' 'Insert' 'Please type number' 'The length of number should be 4' 'Insert student' 'information' 'Format' 'Name' 'Gender' 'Class' 'e.g.' 'zhangsan' 'male' 'Request three fields' 'Are you sure' 'Insert student' 'record' 'Format' 'Database' 'C-language' 'DataStructure' 'Hundred-mark System' 'e.g.' 'Request three fields' 'Hundred-mark System' 'Non-negative' 'Are you sure' 'Insert successfully!' 'The student' 'has existed' 'Quit' 'Invalid choice') 
+insert1=('插入' '退出' '插入' '请输入学号' '学号为4位' '插入学生' '信息' '格式' '姓名' '性别' '班级' '举例' '张三' '男' '输入应有3个字段' '是否确定' '插入学生' '记录' '格式' '数据库' 'C语言' '数据结构' '百分制' '举例' '输入应有3个字段' '成绩为百分制' '成绩为非负数' '是否确定' '插入成功' '该学生' '已存在' '退出' '无效选择' '存在非整数')
+insert2=('Insert' 'Quit' 'Insert' 'Please type number' 'The length of number should be 4' 'Insert student' 'information' 'Format' 'Name' 'Gender' 'Class' 'e.g.' 'zhangsan' 'male' 'Request three fields' 'Are you sure' 'Insert student' 'record' 'Format' 'Database' 'C-language' 'DataStructure' 'Hundred-mark System' 'e.g.' 'Request three fields' 'Hundred-mark System' 'Non-negative' 'Are you sure' 'Insert successfully!' 'The student' 'has existed' 'Quit' 'Invalid choice' 'Existed non-integer') 
 
 
 #modify
-modify1=('修改' '退出' '请输入学号' '学号为4位' '该学生' '不存在' '修改学生' '记录' '格式' '数据库' 'C语言' '数据结构' '百分制' '举例' '输入应有3个字段' '成绩为百分制' '成绩为非负数' '是否确定修改' '修改成功' '无效选择' '学生表为空' '所有学生')
-modify2=('Modify' 'Quit' 'Please type number' 'The length of number should be 4' 'The student' 'is not existed' 'Modify student' 'record' 'Format' 'Database' 'C-language' 'DataStructure' 'Hundred-mark System' 'e.g.' 'Request three fields' 'Hundred-m-ark System' 'Non-negative' 'Are you sure to modify' 'Modify successfully!' 'Invalid choice' 'None of students' 'All students')
+modify1=('修改' '退出' '请输入学号' '学号为4位' '该学生' '不存在' '修改学生' '记录' '格式' '数据库' 'C语言' '数据结构' '百分制' '举例' '输入应有3个字段' '成绩为百分制' '成绩为非负数' '是否确定修改' '修改成功' '无效选择' '学生表为空' '所有学生' '存在非整数')
+modify2=('Modify' 'Quit' 'Please type number' 'The length of number should be 4' 'The student' 'is not existed' 'Modify student' 'record' 'Format' 'Database' 'C-language' 'DataStructure' 'Hundred-mark System' 'e.g.' 'Request three fields' 'Hundred-m-ark System' 'Non-negative' 'Are you sure to modify' 'Modify successfully!' 'Invalid choice' 'None of students' 'All students' 'Existed non-integer')
 
 #delete
 delete1=('删除' '退出' '请输入学号' '学号为4位' '该学生' '不存在' '确定删除学生' '删除成功' '无效选择' '所有学生' '提示:All表示删除所有学生' '确定删除所有学生' '确定不后悔' '学生表为空')
