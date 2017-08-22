@@ -1,4 +1,8 @@
 #!/bin/bash
 
+###############################
+############Startup############
+###############################
+
 clear
-. signin.sh
+. signin.sh #startup login(signup) window
