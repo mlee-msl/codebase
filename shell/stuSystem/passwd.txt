@@ -1,3 +1,4 @@
 mlee	123
 root	root
 su	su
+ubuntu	ubuntu
