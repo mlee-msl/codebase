@@ -152,11 +152,9 @@ class LinkList(object):
         self.from_seq(lst)
         
     def from_seq(self, seq):
-        if isinstance(seq, LinkList) and self.size != 0:
-            return
-        else:
-            for data in seq:
-                self.append(data)
+        self.clear()
+        for data in seq:
+            self.append(data)
         
     def to_list(self):
         ret = []
@@ -174,6 +172,12 @@ class LinkList(object):
             return "<>" # str: "", tuple: (), list: [], dict: {}, set: set({}), linklist: <>  目前不知道怎么实现如何通过<>形式创建这个LinkList对象
         return "<" + ", ".join(map(str, self.to_list())) + ">"
     
+    def __iter__(self):
+        cur = self.head.next
+        while cur is not None:
+            yield cur.data
+            cur = cur.next
+
     def __add__(self, link_list): # 两个LinkList进行+操作,self自身不发生改变
         return LinkList(self.to_list() + link_list.to_list())
     
