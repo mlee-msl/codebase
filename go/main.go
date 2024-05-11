@@ -1,7 +1,7 @@
 package main
 
 func main() {
-	testMap()
-	testSlice1()
-	testSlice2()
+	// testMap()
+	// testSlice1()
+	// testSlice2()
 }
