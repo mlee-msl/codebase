@@ -17,10 +17,10 @@ func TestTaskGroup(t *testing.T) {
 	var (
 		tg TaskGroup
 
-		tasks = []Task{
-			NewTask(1, task1),
-			NewTask(2, task2),
-			NewTask(3, task3),
+		tasks = []*Task{
+			NewTask(1, true, task1),
+			NewTask(2, true, task2),
+			NewTask(3, true, task3),
 		}
 	)
 
