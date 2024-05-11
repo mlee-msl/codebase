@@ -67,10 +67,10 @@ func main2() {
 
 	d := aa{1, "mlee"}
 	for index, num := range strings.Repeat("mlee", 100) {
-		go func() {
+		go func(index int, num rune) {
 			d.a2 += string(num)
 			d.a1 += index
-		}()
+		}(index, num)
 	}
 	fmt.Println(d)
 

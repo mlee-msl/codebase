@@ -17,7 +17,7 @@ func TestTaskGroup(t *testing.T) {
 	var (
 		tg TaskGroup
 
-		tasks = []TaskDesc{
+		tasks = []Task{
 			NewTask(1, task1),
 			NewTask(2, task2),
 			NewTask(3, task3),

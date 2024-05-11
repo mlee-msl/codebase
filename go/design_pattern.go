@@ -12,17 +12,17 @@ import (
 type TaskGroup struct {
 	once       sync.Once
 	fNOs       map[uint32]struct{}
-	workerNums uint32     // 工作组数量（协程数）
-	tasks      []TaskDesc // 待执行的任务集合
+	workerNums uint32 // 工作组数量（协程数）
+	tasks      []Task // 待执行的任务集合
 }
 
-type TaskDesc struct {
-	fNO uint32 // 任务编号
-	f   func() (interface{}, error)
+type Task struct {
+	fNO uint32                      // 任务编号
+	f   func() (interface{}, error) // 任务方法
 }
 
-func NewTask(fNO uint32, f func() (interface{}, error)) TaskDesc {
-	return TaskDesc{fNO, f}
+func NewTask(fNO uint32 /* 任务唯一标识 */, f func() (interface{}, error) /* 任务执行方法 */) Task {
+	return Task{fNO, f}
 }
 
 type taskResult struct {
@@ -52,7 +52,7 @@ func (tg *TaskGroup) SetWorkerNums(workerNums uint32) *TaskGroup {
 	return tg
 }
 
-func (tg *TaskGroup) AddTask(tasks ...TaskDesc) *TaskGroup {
+func (tg *TaskGroup) AddTask(tasks ...Task) *TaskGroup {
 	tg.once.Do(func() {
 		tg.fNOs = make(map[uint32]struct{}, 2*len(tasks))
 	})
@@ -72,7 +72,7 @@ func (tg *TaskGroup) AddTask(tasks ...TaskDesc) *TaskGroup {
 
 func (tg *TaskGroup) Run() map[uint32]taskResult {
 	var (
-		tasks   = make(chan TaskDesc, len(tg.tasks))
+		tasks   = make(chan Task, len(tg.tasks))
 		results = make(chan taskResult, len(tg.tasks))
 
 		wg sync.WaitGroup
@@ -109,7 +109,7 @@ func (tg *TaskGroup) Run() map[uint32]taskResult {
 	return taskResults
 }
 
-func (tg *TaskGroup) worker(tasks chan TaskDesc, results chan taskResult) {
+func (tg *TaskGroup) worker(tasks chan Task, results chan taskResult) {
 	for task := range tasks {
 		result, err := task.f()
 		results <- taskResult{task.fNO, result, err}

@@ -3,3 +3,5 @@ testCodebase/*.class
 testCodebase/*/*.out
 testCodebase/*/*.class
 testCodebase/python/__pycache__ # ignore the file compiled by import
+testCodebase/go/*.exe
+testCodebase/go/testCodebase
