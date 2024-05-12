@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 	"sync"
 )
@@ -54,8 +55,7 @@ func (tg *TaskGroup) AddTask(tasks ...*Task) *TaskGroup {
 			continue
 		}
 		if _, exist := tg.fNOs[task.fNO]; exist {
-			// return errors.New("AddTask: Already have the same task") // 已经有相同的任务了
-			panic("AddTask: Already have the same task") // 已经有相同的任务了
+			panic(fmt.Sprintf("AddTask: Already have the same task %d", task.fNO)) // 已经有相同的任务了
 		}
 		if task.f != nil {
 			tg.fNOs[task.fNO] = struct{}{}
@@ -67,6 +67,10 @@ func (tg *TaskGroup) AddTask(tasks ...*Task) *TaskGroup {
 
 // Run 启动并运行任务组中的所有任务
 func (tg *TaskGroup) Run() map[uint32]*taskResult {
+	if len(tg.tasks) == 0 {
+		return nil
+	}
+
 	var (
 		tasks   = make(chan *Task, len(tg.tasks))
 		results = make(chan *taskResult, len(tg.tasks))
