@@ -143,11 +143,11 @@ func (b *B1) f1() {
 // 编译期校验结构体是否实现了特定接口
 var _ A1 = (*B1)(nil)
 
-func ctxWorker(ctx context.Context, id int) {
+func ctxWorker1(ctx context.Context, id int) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("Worker %d stopped\n", id)
+			fmt.Printf("Worker %d stopped, cause %v\n", id, ctx.Err())
 			return
 		default:
 			fmt.Printf("Worker %d working...\n", id)
@@ -156,11 +156,57 @@ func ctxWorker(ctx context.Context, id int) {
 	}
 }
 
-func testCtx() {
+func ctxWorker2(ctx context.Context, id int) {
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		fmt.Println("mleeeeeeeeeee")
+	// 		break
+	// 	}
+	// }
+
+	var once sync.Once
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Printf("Worker %d stopped, cause %v\n", id, ctx.Err())
+			return
+		default:
+			once.Do(func() {
+				fmt.Printf("Worker %d working...\n", id)
+				// time.Sleep(100 * time.Millisecond)
+				time.Sleep(2 * time.Second)
+			})
+		}
+	}
+}
+
+func ctxWorker3(ctx context.Context, id int) {
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		fmt.Println("mleeeeeeeeeee")
+	// 		break
+	// 	}
+	// }
+
+	select {
+	case <-ctx.Done():
+		fmt.Printf("Worker %d stopped, cause %v\n", id, ctx.Err())
+		return
+	default:
+		fmt.Printf("Worker %d working...\n", id)
+		time.Sleep(100 * time.Millisecond)
+		// time.Sleep(2 * time.Second)
+	}
+
+}
+
+func testCtx1() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go ctxWorker(ctx, 1)
-	go ctxWorker(ctx, 2)
+	go ctxWorker1(ctx, 1)
+	go ctxWorker1(ctx, 2)
 
 	time.Sleep(1 * time.Second)
 	cancel() // 发送取消信号
@@ -169,7 +215,41 @@ func testCtx() {
 	time.Sleep(500 * time.Millisecond)
 }
 
+func testCtx2() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	for i := 1; i <= 20; i++ {
+		go ctxWorker2(ctx, i)
+	}
+
+	time.Sleep(1 * time.Second)
+	cancel() // 发送取消信号
+
+	// 等待一段时间以确保 worker 接收到取消信号
+	time.Sleep(500 * time.Millisecond)
+}
+
+func testCtx3() {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	for i := 1; i <= 20; i++ {
+		go ctxWorker3(ctx, i)
+	}
+
+	time.Sleep(1 * time.Second)
+	cancel() // 发送取消信号
+	cancel() // 发送取消信号
+
+	// 等待一段时间以确保 worker 接收到取消信号
+	time.Sleep(500 * time.Millisecond)
+	fmt.Println("end")
+}
+
 // 1. 是否可以使用任务池
 // 2. 任务太多如何处理？
 // 3. 使用sync.Cond进行关键任务失败尽早取消
 // var _ sync.Pool
+
+
+// https://blog.csdn.net/weiguang102/article/details/131008608
+// 查看下errgroup的原理，确认也是否是出现一个错误全部goroutine都立即退出，还是？

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -67,53 +68,73 @@ func (tg *TaskGroup) AddTask(tasks ...*Task) *TaskGroup {
 
 // Run 启动并运行任务组中的所有任务
 func (tg *TaskGroup) Run() map[uint32]*taskResult {
-	if len(tg.tasks) == 0 {
+	taskNums := len(tg.tasks)
+	if taskNums == 0 {
 		return nil
 	}
 
 	var (
-		tasks   = make(chan *Task, len(tg.tasks))
-		results = make(chan *taskResult, len(tg.tasks))
+		tasks   = make(chan *Task, taskNums)
+		results = make(chan *taskResult, taskNums)
 
 		wg sync.WaitGroup
 	)
 	// 工作协程数不得多余待执行任务总数，否则，因多余协程不会做任务，反而会由于创建或销毁这些协程而带来额外不必要的性能消耗
-	if tg.workerNums > uint32(len(tg.tasks)) {
-		tg.workerNums = uint32(len(tg.tasks))
+	if tg.workerNums > uint32(taskNums) {
+		tg.workerNums = uint32(taskNums)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel() // possible context leak
 	// Start workers
 	for i := 1; i <= int(tg.workerNums); i++ {
 		wg.Add(1)
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
-			tg.worker(tasks, results)
-		}()
+			err := tg.worker(ctx, tasks, results)
+			if err != nil {
+				cancel()
+			}
+		}(ctx)
 	}
 
 	// Send tasks to workers
-	for i := 0; i < len(tg.tasks); i++ {
+	for i := 0; i < taskNums; i++ {
 		tasks <- tg.tasks[i]
 	}
 	close(tasks)
 
 	go func() {
 		wg.Wait()
+		// 当所有任务执行完毕后，再关闭`results`便于能结束遍历收集结果的`for`操作
 		close(results)
 	}()
 
 	// Collect results from workers
-	taskResults := make(map[uint32]*taskResult, len(tg.tasks))
+	var (
+		taskResults = make(map[uint32]*taskResult, taskNums)
+		// errs        = make([]error, 0, taskNums)
+	)
 	for result := range results {
 		taskResults[result.fNO] = result
 	}
 	return taskResults
 }
 
-func (tg *TaskGroup) worker(tasks chan *Task, results chan *taskResult) {
-	for task := range tasks {
-		result, err := task.f() // 每个任务逐一被执行
-		results <- &taskResult{task.fNO, result, err}
+func (tg *TaskGroup) worker(ctx context.Context, tasks chan *Task, results chan *taskResult) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		for task := range tasks {
+			result, err := task.f() // 每个任务逐一被执行
+			if task.mustSuccess && err != nil {
+				return err
+			}
+			results <- &taskResult{task.fNO, result, err}
+		}
 	}
+	return nil
 }
 
 type taskResult struct {
