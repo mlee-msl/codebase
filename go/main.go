@@ -7,5 +7,9 @@ func main() {
 	// testNoCopy()
 	// testCtx1()
 	// testCtx2()
-	testCtx3()
+	// testCtx3()
+	// testCtx()
+	// testErrGroup()
+	// testOnce()
+	textCtxCancel2()
 }

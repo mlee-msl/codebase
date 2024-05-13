@@ -8,25 +8,29 @@ import (
 )
 
 // Fan-Out/Fan-In 模式(扇出/扇入模式)
-// 1. 所有操作是否需要考虑并发安全
+// TODO:
+// 1. 所有操作是否需要考虑并发安全, 比如`TaskGroup.fNOs`, `TaskGroup.tasks`
 // 2. 是否需要有`NewTaskGroup()`方法，这样可以在这个方法中做一次一次性操作，比如初始化`fNOs`
 
 // TaskGroup 表示可将多个任务进行安全并发执行的一个对象
 type TaskGroup struct {
-	once       sync.Once
-	fNOs       map[uint32]struct{}
-	workerNums uint32  // 工作组数量（协程数）
-	tasks      []*Task // 待执行的任务集合
+	workerNums uint32 // 工作组数量（协程数）
+
+	initOnce       sync.Once
+	runExactlyOnce sync.Once // 任务组当且仅当运行一次
+
+	fNOs  map[uint32]struct{}
+	tasks []*Task // 待执行的任务集合
 }
 
 type Task struct {
 	fNO         uint32                      // 任务编号
 	f           func() (interface{}, error) // 任务方法
-	mustSuccess bool                        // 任务必须执行成功，否则整个任务组将会立即结束，且失败
+	mustSuccess bool                        // 任务必须执行成功，否则整个任务组将会立即结束，且失败(返回第一个必须成功任务的失败结果)
 }
 
 // NewTask 创建一个任务
-func NewTask(fNO uint32 /* 任务唯一标识 */, mustSuccess bool /* 标识任务是否必须执行成功 */, f func() (interface{}, error) /* 任务执行方法 */) *Task {
+func NewTask(fNO uint32 /* 任务唯一标识 */, f func() (interface{}, error) /* 任务执行方法 */, mustSuccess bool /* 标识任务是否必须执行成功 */) *Task {
 	return &Task{fNO, f, mustSuccess}
 }
 
@@ -45,7 +49,7 @@ func (tg *TaskGroup) SetWorkerNums(workerNums uint32) *TaskGroup {
 
 // AddTask 向任务组中添加若干待执行的任务
 func (tg *TaskGroup) AddTask(tasks ...*Task) *TaskGroup {
-	tg.once.Do(func() {
+	tg.initOnce.Do(func() {
 		var preAllocatedCapacity = 2*len(tasks) + 1
 		tg.fNOs = make(map[uint32]struct{}, preAllocatedCapacity)
 		tg.tasks = make([]*Task, 0, preAllocatedCapacity)
@@ -66,39 +70,51 @@ func (tg *TaskGroup) AddTask(tasks ...*Task) *TaskGroup {
 	return tg
 }
 
+// Run 启动并运行任务组中的所有任务(仅会运行当且仅当一次)
+func (tg *TaskGroup) RunExactlyOnce() (result map[uint32]*taskResult, err error) {
+	tg.runExactlyOnce.Do(func() {
+		result, err = tg.Run()
+	})
+	return
+}
+
 // Run 启动并运行任务组中的所有任务
-func (tg *TaskGroup) Run() map[uint32]*taskResult {
+func (tg *TaskGroup) Run() (map[uint32]*taskResult, error) {
 	taskNums := len(tg.tasks)
 	if taskNums == 0 {
-		return nil
+		return nil, nil
 	}
 
 	var (
 		tasks   = make(chan *Task, taskNums)
 		results = make(chan *taskResult, taskNums)
 
-		wg sync.WaitGroup
+		wg   sync.WaitGroup
+		once sync.Once
 	)
 	// 工作协程数不得多余待执行任务总数，否则，因多余协程不会做任务，反而会由于创建或销毁这些协程而带来额外不必要的性能消耗
 	if tg.workerNums > uint32(taskNums) {
 		tg.workerNums = uint32(taskNums)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel() // possible context leak
-	// Start workers
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil) // 遍历`ctx`相关的资源泄露(channel, goroutine等)
+	// 启动`workers`
 	for i := 1; i <= int(tg.workerNums); i++ {
 		wg.Add(1)
-		go func(ctx context.Context) {
+		go func() {
 			defer wg.Done()
-			err := tg.worker(ctx, tasks, results)
-			if err != nil {
-				cancel()
+			if err := tg.worker(ctx, tasks, results); err != nil {
+				once.Do(func() {
+					cancel(err)
+				})
 			}
-		}(ctx)
+		}()
 	}
 
-	// Send tasks to workers
+	// fmt.Printf("goroutine nums:%d\n", runtime.NumGoroutine())
+
+	// 发送任务到所有的`workers`中
 	for i := 0; i < taskNums; i++ {
 		tasks <- tg.tasks[i]
 	}
@@ -110,23 +126,20 @@ func (tg *TaskGroup) Run() map[uint32]*taskResult {
 		close(results)
 	}()
 
-	// Collect results from workers
-	var (
-		taskResults = make(map[uint32]*taskResult, taskNums)
-		// errs        = make([]error, 0, taskNums)
-	)
+	// 从所有的`workers`中收集结果
+	taskResults := make(map[uint32]*taskResult, taskNums)
 	for result := range results {
 		taskResults[result.fNO] = result
 	}
-	return taskResults
+	return taskResults, context.Cause(ctx)
 }
 
 func (tg *TaskGroup) worker(ctx context.Context, tasks chan *Task, results chan *taskResult) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		for task := range tasks {
+	for task := range tasks {
+		select {
+		case <-ctx.Done(): // 接收到`ctx`被取消的信号，即刻停止后续任务的执行
+			return context.Cause(ctx)
+		default:
 			result, err := task.f() // 每个任务逐一被执行
 			if task.mustSuccess && err != nil {
 				return err

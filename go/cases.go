@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -190,16 +191,17 @@ func ctxWorker3(ctx context.Context, id int) {
 	// 	}
 	// }
 
-	select {
-	case <-ctx.Done():
-		fmt.Printf("Worker %d stopped, cause %v\n", id, ctx.Err())
-		return
-	default:
-		fmt.Printf("Worker %d working...\n", id)
-		time.Sleep(100 * time.Millisecond)
-		// time.Sleep(2 * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Printf("Worker %d stopped, cause by %v\n", id, context.Cause(ctx))
+			return
+		default:
+			fmt.Printf("Worker %d working...\n", id)
+			time.Sleep(100 * time.Millisecond)
+			// time.Sleep(2 * time.Second)
+		}
 	}
-
 }
 
 func testCtx1() {
@@ -230,18 +232,20 @@ func testCtx2() {
 }
 
 func testCtx3() {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	for i := 1; i <= 20; i++ {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	// ctx, cancel := context.WithCancel(context.Background())
+	for i := 1; i <= 4; i++ {
 		go ctxWorker3(ctx, i)
 	}
 
 	time.Sleep(1 * time.Second)
-	cancel() // 发送取消信号
-	cancel() // 发送取消信号
+	// cancel() // 发送取消信号
+	cancel(errors.New("mlee cancel")) // 发送取消信号
+	// cancel(errors.New("mlee cancel")) // 发送取消信号
 
 	// 等待一段时间以确保 worker 接收到取消信号
-	time.Sleep(500 * time.Millisecond)
+	fmt.Println("....................")
+	time.Sleep(500 * time.Second)
 	fmt.Println("end")
 }
 
@@ -250,6 +254,93 @@ func testCtx3() {
 // 3. 使用sync.Cond进行关键任务失败尽早取消
 // var _ sync.Pool
 
-
 // https://blog.csdn.net/weiguang102/article/details/131008608
 // 查看下errgroup的原理，确认也是否是出现一个错误全部goroutine都立即退出，还是？
+
+// errgroup 是添加一个任务随即执行一个任务，这对于不需要收集执行结果的场景比较合适，对于需要收集每个任务的结果的情况，需要首先将所有任务收集起来，才能知道收集结果的变量的空间大小
+
+func testCtx() {
+	const shortDuration = 1 * time.Millisecond
+
+	// ctx, _ := context.WithTimeout(context.Background(), shortDuration)
+	ctx, cancel := context.WithTimeoutCause(context.Background(), shortDuration, errors.New("occurs err"))
+	// ctx, cancel := context.WithCancelCause(context.Background())
+	// cancel(errors.New("occurs err"))
+	defer cancel() // 释放资源，避免context(关联的channel等)或和context关联的goroutine泄露
+
+	select {
+	case <-time.After(1 * time.Second):
+		fmt.Println("overslept")
+	case <-ctx.Done():
+		t, f := ctx.Deadline()
+		fmt.Println("aa", ctx.Err(), t, f, ctx.Value("ml"), context.Cause(ctx))
+	}
+}
+
+func textCtxCancel1() {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	cancel(errors.New("err1"))
+	fmt.Println(context.Cause(ctx))
+	cancel(errors.New("err2"))
+	fmt.Println(context.Cause(ctx))
+}
+
+func textCtxCancel2() {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(errors.New("err0"))
+	fmt.Println(context.Cause(ctx))
+}
+
+func testErrGroup() {
+	// 创建一个带有上下文的 errgroup.Group
+	// group, ctx := errgroup.WithContext(ctx)
+	group := WithContext(context.Background())
+
+	// 启动第一个任务
+	group.Go(func() error {
+		// 模拟一个耗时的任务
+		time.Sleep(2 * time.Second)
+		fmt.Println("Task 1 completed")
+		return nil
+	})
+
+	// 启动第二个任务
+	group.Go(func() error {
+		// 模拟一个有错误的任务
+		time.Sleep(1 * time.Second)
+		fmt.Println("Task 2 completed with error")
+		return fmt.Errorf("Task 2 encountered an error")
+		// return nil
+	})
+
+	// 启动第三个任务
+	group.Go(func() error {
+		// 模拟一个耗时的任务
+		time.Sleep(3 * time.Second)
+		fmt.Println("Task 3 completed")
+		return nil
+	})
+
+	// 等待所有任务完成或发生错误
+	err := group.Wait()
+
+	if err != nil {
+		fmt.Println("Error occurred:", err)
+	} else {
+		fmt.Println("All tasks completed successfully")
+	}
+}
+
+func testOnce() {
+	var once sync.Once
+	once.Do(func() {
+		fmt.Println("func 1!")
+	})
+	once.Do(func() {
+		fmt.Println("func 1!")
+	})
+
+	once.Do(func() {
+		fmt.Println("func 2!")
+	})
+}

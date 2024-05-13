@@ -24,8 +24,8 @@ func TestTaskGroup(t *testing.T) {
 		}
 	)
 
-	taskResult := tg.SetWorkerNums(4).AddTask(tasks...).Run()
-	fmt.Printf("**************TaskGroup************\n%+v\n", taskResult)
+	taskResult, err := tg.SetWorkerNums(4).AddTask(tasks...).Run()
+	fmt.Printf("**************TaskGroup************\n%+v, %+v\n", taskResult, err)
 	for fno, result := range taskResult {
 		fmt.Printf("FNO: %d, RESULT: %v , STATUS: %v\n", fno, result.Result(), result.Error())
 	}
@@ -38,8 +38,8 @@ func TestTaskGroupBoundary(t *testing.T) {
 		tasks = []*Task{}
 	)
 
-	taskResult := tg.SetWorkerNums(4).AddTask(tasks...).Run()
-	fmt.Printf("**************TaskGroup************\n%+v\n", taskResult)
+	taskResult, err := tg.SetWorkerNums(4).AddTask(tasks...).Run()
+	fmt.Printf("**************TaskGroup************\n%+v, %+v\n", taskResult, err)
 	for fno, result := range taskResult {
 		fmt.Printf("FNO: %d, RESULT: %v , STATUS: %v\n", fno, result.Result(), result.Error())
 	}
@@ -57,8 +57,8 @@ func TestTaskGroupAbnormal(t *testing.T) {
 		}
 	)
 
-	taskResult := tg.SetWorkerNums(4).AddTask(tasks...).Run()
-	fmt.Printf("**************TaskGroup************\n%+v\n", taskResult)
+	taskResult, err := tg.SetWorkerNums(4).AddTask(tasks...).Run()
+	fmt.Printf("**************TaskGroup************\n%+v, %+v\n", taskResult, err)
 	for fno, result := range taskResult {
 		fmt.Printf("FNO: %d, RESULT: %v , STATUS: %v\n", fno, result.Result(), result.Error())
 	}
@@ -69,8 +69,8 @@ func getRandomNum(mod int) int {
 }
 
 func task1() (interface{}, error) {
-	const taskFlag = "TASK1"
-	// fmt.Println(taskFlag)
+	const taskFlag = "running TASK1"
+	fmt.Println(taskFlag)
 	simulateMemIO(taskFlag)
 	return getRandomNum(2e3), fmt.Errorf("%s err", taskFlag)
 }
@@ -81,8 +81,8 @@ type task2Struct struct {
 }
 
 func task2() (interface{}, error) {
-	const taskFlag = "TASK2"
-	// fmt.Println(taskFlag)
+	const taskFlag = "running TASK2"
+	fmt.Println(taskFlag)
 	simulateMemIO(taskFlag)
 	return task2Struct{
 		a: getRandomNum(1e1),
@@ -91,8 +91,8 @@ func task2() (interface{}, error) {
 }
 
 func task3() (interface{}, error) {
-	const taskFlag = "TASK3"
-	// fmt.Println(taskFlag)
+	const taskFlag = "running TASK3"
+	fmt.Println(taskFlag)
 	simulateMemIO(taskFlag)
 	return fmt.Sprintf("%s: The data is %d", taskFlag, getRandomNum(12)), fmt.Errorf("%s err", taskFlag)
 }
@@ -134,7 +134,7 @@ func BenchmarkTaskGroupZero(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
@@ -144,7 +144,7 @@ func BenchmarkTaskGroupLow(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
@@ -154,7 +154,7 @@ func BenchmarkTaskGroupNormal(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
@@ -164,7 +164,7 @@ func BenchmarkTaskGroupMedium(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
@@ -174,7 +174,7 @@ func BenchmarkTaskGroupHigh(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
@@ -184,7 +184,7 @@ func BenchmarkTaskGroupExtremelyHigh(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var tg TaskGroup
-		_ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
+		_, _ = tg.SetWorkerNums(2).AddTask(tasks...).Run()
 	}
 }
 
