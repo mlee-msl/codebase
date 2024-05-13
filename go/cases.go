@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // https://mp.weixin.qq.com/s/aC5BZWuO7bRJdc_xUmMTTw
@@ -293,7 +295,7 @@ func textCtxCancel2() {
 
 func testErrGroup() {
 	// 创建一个带有上下文的 errgroup.Group
-	// group, ctx := errgroup.WithContext(ctx)
+	_, _ = errgroup.WithContext(context.Background())
 	group := WithContext(context.Background())
 
 	// 启动第一个任务

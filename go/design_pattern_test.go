@@ -18,9 +18,9 @@ func TestTaskGroup(t *testing.T) {
 		tg TaskGroup
 
 		tasks = []*Task{
-			NewTask(1, true, task1),
-			NewTask(2, true, task2),
-			NewTask(3, true, task3),
+			NewTask(1, task1, true),
+			NewTask(2, task2, true),
+			NewTask(3, task3, true),
 		}
 	)
 
@@ -50,10 +50,10 @@ func TestTaskGroupAbnormal(t *testing.T) {
 		tg TaskGroup
 
 		tasks = []*Task{
-			NewTask(1, true, task1),
+			NewTask(1, task1, true),
 			nil,
-			NewTask(2, false, task2),
-			NewTask(2, true, task1),
+			NewTask(2, task2, false),
+			NewTask(2, task1, true),
 		}
 	)
 
@@ -196,7 +196,7 @@ func buildTestCaseData(taskNums uint32) []*Task {
 	}
 	tasks := make([]*Task, 0, taskNums)
 	for i := 1; i <= int(taskNums); i++ {
-		tasks = append(tasks, NewTask(uint32(getRandomNum(1e10)), true, taskSet[getRandomNum(len(taskSet))]))
+		tasks = append(tasks, NewTask(uint32(getRandomNum(1e10)), taskSet[getRandomNum(len(taskSet))], true))
 	}
 	return tasks
 }
