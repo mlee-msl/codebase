@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 
@@ -345,4 +346,11 @@ func testOnce() {
 	once.Do(func() {
 		fmt.Println("func 2!")
 	})
+}
+
+func testSortBool(bools []bool) {
+	sort.Slice(bools, func(i, j int) bool {
+		return bools[i] && !bools[j]
+	})
+	fmt.Println(bools)
 }

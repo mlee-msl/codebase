@@ -11,5 +11,6 @@ func main() {
 	// testCtx()
 	// testErrGroup()
 	// testOnce()
-	textCtxCancel2()
+	// textCtxCancel2()
+	testSortBool([]bool{false, false, true, true, false, false, true})
 }
