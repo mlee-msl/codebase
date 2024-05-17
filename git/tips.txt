@@ -1,0 +1,111 @@
+# 2017-08-03 --> 三生三世十里桃花上映
+# 2017-07-28 --> 战狼2上映
+'实践是认识的来源'-->'Practice is the source of knowledge'
+
+
+2017年 07月 19日 星期三 17:27:51 CST
+
+git init [目录名] #初始化指定目录名为一个版本库(添加.git目录)或是初始化当前目录为一个版本库
+
+git clone url #从指定url(http、https、ssh、git等)复制一个版本库到本地：note:只会复制版本库中master分支的内容
+
+# 以下两个属性为必配属性，以供提交(git commit)试用(有三种形式)
+# 第一种：这种配置会对该系统中的所有用户的版本库生效，保存于/etc/gitconfig中
+git config --system user.name 'MLee'
+git config --system user.email 'mleewhs@gmail.com'
+
+# 第二种：这种配置只会对该用户的所有版本库生效，保存于~/.gitconfig中
+git config --global user.name 'MLee' #指定自己的名字
+git config --global user.email 'mleewhs@gmail.com' #指定自己的邮箱
+
+# 第三种：这种配置只会对该用户的当前版本库生效，保存于XXX/repositoryName/.git/config中
+git config user.name 'MLee' #指定自己的名字
+git config user.email 'mleewhs@gmail.com' #指定自己的邮箱
+# 以上三个文件如果设置间存在冲突，那么其优先级为:第三种>第二种>第一种
+
+git remote add <url别名> url #其中url别名默认为origin
+git remote rename <原url别名> <现url别名>
+git remote remove <url别名>
+git remote -v #显示url信息
+
+git status #查看版本库状态
+git diff #查看工作区与版本库的区别
+git diff --cached #查看最近两次提交版本的区别
+
+git add <filename>... #将工作区filename添加到暂存区(stage)中以供提交到当前分支中
+git commit -m 'XXX' #将暂存区中发生更改的文件一并提交到分支中
+
+rm <filename> #删除工作区文件
+git rm <filename> #删除版本库中文件接着要使用git commit -m 'XXX'提交
+
+git branch <分支名> #新建一个分支
+git checkout <分支名> #切换到指定分支下
+git checkout -b <分支名> #新建分支并切换到该分支下equivalence以上两个命令
+
+git branch # -a表示显示本地与远程分支;-r只会显示远程分支;-d删除已经合并的分支;-D强制删除
+
+git branch --set-upstream-to=<远程分支名> #将当前分支与指定的远程分支关联，如origin/master
+git branch --unset-upstream <本地分支名> #将指定的本地分支与其关联远程分支取消关联
+
+git merge <分支名> #将指定的这个分支合并到当前分支中
+git merge --no-ff -m 'XXX' <branchName> #这样会在log中记录下来，而不是直接更改指针的位置(快速向前方式)
+
+
+
+
+git remote add <url别名> url #其中url别名默认为origin
+git remote rename <原url别名> <现url别名>
+git remote remove <url别名>
+git remote -v #显示url信息
+
+git status #查看版本库状态
+git diff #查看工作区与版本库的区别
+git diff --cached #查看最近两次提交版本的区别
+
+git add <filename>... #将工作区filename添加到暂存区(stage)中以供提交到当前分支中
+git commit -m 'XXX' #将暂存区中发生更改的文件一并提交到分支中
+
+rm <filename> #删除工作区文件
+git rm <filename> #删除版本库中文件接着要使用git commit -m 'XXX'提交
+
+git branch <分支名> #新建一个分支
+git checkout <分支名> #切换到指定分支下
+git checkout -b <分支名> #新建分支并切换到该分支下equivalence以上两个命令
+
+git branch # -a表示显示本地与远程分支;-r只会显示远程分支;-d删除已经合并的分支;-D强制删除
+
+git branch --set-upstream-to=<远程分支名> #将当前分支与指定的远程分支关联，如origin/master
+git branch --unset-upstream <本地分支名> #将指定的本地分支与其关联远程分支取消关联
+
+git merge <分支名> #将指定的这个分支合并到当前分支中
+git merge --no-ff -m 'XXX' <branchName> #这样会在log中记录下来，而不是直接更改指针的位置(快速向前方式)
+
+git log [--pretty=oneline  选项表示只会显示提交id与提交说明comment] #显示提交日志信息(根据提交点的时间由近到远依次显示)
+git reflog #显示提交日志
+git reset --hard <提交id> #会使版本库中的文件回到指定的版本(提交id的那个版本)，note:HEAD表示当前的版本，HEAD^当前版本的上一个版本，HEAD^^依次类推，HEAD~10表示当前版本的第前10个版本
+
+git pull <url别名> <本地分支名>:<远程分支名> #将指定的远程分支下的内容抓取到本地分支上(如果本地分支名木有则会创建)
+git pull <url别名> <分支名> #从远程url的分支抓取到指定的分支中
+git pull #抓取到当前分支中(与当前分支关联的分支)
+# git push 命令只会推送版本库中某个分支中的文件，而不是工作区中的，所以一旦你在工作区中将文件修改，就应该git add & git commit --> git push
+git push <url别名> <本地分支名> #将指定本地分支中内容推送到与其关联的远程分支中，如果推送失败则应该首先pull远程最新提交以获取最新版本
+git push <url别名> <本地分支名>:<远程分支名> #将指定本地分支中内容推送到指定远程分支中(如果远程没有这个分支就会创建)
+git push <url别名> :<远程分支名> #删除远程分支(可以理解为将空的本地分支推送到远程分支，即是删除)
+
+git checkout -- <文件名> #可以撤销工作区中的该指定文件修改，保持与版本库中一致
+git checkout <commit id> -- <filename> #使指定的这个文件回到指定的版本上
+
+git reset HEAD <文件名> #可以使暂存区中内容返回到工作区(不能提交到某分支中)
+
+git tag -a xxx（标签名称） -m xxx（说明信息） # 对当前分支当前commit创建一个tag
+git tag [标签名] [提交id] #相当于为提交的id指定一个别名，今后就可以直接操作标签了，见名之意
+git tag -d <标签名> #删除一个本地标签
+git push origin <标签名> #推送本地标签到远程
+git push origin --tags #推送全部尚未推送的本地标签
+git push origin :refs/tags/<标签名> #删除一个远程标签
+
+git stash #保存工作现场
+git stash list #查看所有的保存
+git stash apply [保存号] #恢复指定的现场，如stash@{0}
+git stash drop [保存号] #删除指定现场
+git stash pop [保存号] #恢复并删除指定现场

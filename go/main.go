@@ -12,5 +12,11 @@ func main() {
 	// testErrGroup()
 	// testOnce()
 	// textCtxCancel2()
-	testSortBool([]bool{false, false, true, true, false, false, true})
+	// testSortBool([]bool{false, false, true, true, false, false, true})
+	// testError()
+	// testMapSliCap()
+	// testPanic()
+	// testPanic1()
+	// testPanic2()
+	testInheritance()
 }

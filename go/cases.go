@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
 
+	errs "github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -354,3 +356,114 @@ func testSortBool(bools []bool) {
 	})
 	fmt.Println(bools)
 }
+
+func testError() {
+	fmt.Println(errC())
+	fmt.Println(errD())
+	fmt.Println(errs.Cause(errC()), errs.Cause(errD()))
+}
+
+func errA() error {
+	return errors.New("this is a errA")
+}
+
+func errB() error {
+	err := errA()
+	return errs.Wrap(err, "this is a errB")
+}
+
+func errC() error {
+	err := errB()
+	return errs.WithMessage(err, "this is a errC")
+}
+
+func errD() error {
+	return errs.WithStack(errC())
+}
+
+func testMapSliCap() {
+	m := make(map[uint]byte, 10)
+	var m1 map[uint]byte
+	sli := make([]byte, 0, 10)
+	var sli1 []byte
+	fmt.Println(len(m), len(m1))
+	fmt.Println(len(sli), cap(sli), len(sli1), cap(sli1))
+}
+
+// recover必须在defer函数中，且不能再包装其他函数了，比如testPanic1，testPanic2都不能recover住
+// panic后不能在其他协程中recover住
+func testPanic() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+			var buf [4096]byte
+			n := runtime.Stack(buf[:], false)
+			fmt.Printf("Stack trace:\n%s\n", buf[:n])
+		}
+	}()
+	fmt.Println("mleeeee")
+	panic(123)
+}
+
+func testPanic1() {
+	defer func() {
+		rec()
+	}()
+	fmt.Println("mleeeee")
+	panic(123)
+}
+
+func rec() {
+	if r := recover(); r != nil {
+		fmt.Println(r)
+	}
+}
+
+func testPanic2() {
+	defer func() {
+		func() {
+			if r := recover(); r != nil {
+				fmt.Println(r)
+			}
+		}()
+	}()
+	fmt.Println("mleeeee")
+	panic(123)
+}
+
+type AIn interface {
+	f1()
+	f2()
+}
+
+type StA struct {
+	a string
+}
+
+func (s StA)f1() {
+	fmt.Println(s.a)
+}
+
+func (s StA)f2() {
+	fmt.Println(s.a+"mleeee")
+}
+
+type StB  struct {
+	StA // 通过嵌入结构体实现了继承(实际上，是一种组合)
+}
+
+func (s StB) f1() {
+	fmt.Println(s.a+"msl")
+}
+
+func testInheritance(){
+	s := StB{StA: StA{"111111"}}
+	testInterface(s)
+}
+
+func testInterface(s AIn) { // 通过接口实现多态
+	s.f1()
+	s.f2()
+}
+
+
