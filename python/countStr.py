@@ -38,5 +38,10 @@ def main(s1, s2, len1, len2):
 	return count(s1, s2, len1, len2)
 
 if __name__ == '__main__':
-	s1, s2, len1, len2 = input().strip().split()
-	print(main(s1, s2, int(len1), int(len2)))
+	# s1, s2, len1, len2 = input().strip().split()
+	# print(main(s1, s2, int(len1), int(len2)))
+	temp_info = {"2022_Q1": {1: 12}, "2022_Q2": {11: 12}, "2023_Q1": {111: 122}}
+	str_keys_list = str(list(temp_info.keys()))
+	print(str_keys_list)
+	year = str_keys_list[str_keys_list.find("2022"):].split("'")[0]
+	print(year)

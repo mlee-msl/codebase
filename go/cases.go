@@ -4,11 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/bits"
 	"math/rand"
 	"runtime"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 
 	errs "github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -465,5 +470,125 @@ func testInterface(s AIn) { // 通过接口实现多态
 	s.f1()
 	s.f2()
 }
+
+func testCancelCtx1() {
+	fmt.Println(testCancelCtx())
+}
+func testCancelCtx()error {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+	// cancel(errors.New("mlee1111")) // 仅获取到第一次ctx cancel的错误。后面再次取消不会有任何动作，直接返回
+	// cancel(errors.New("mlee2222"))
+	// cancel(nil)
+	// fmt.Println(context.Cause(ctx), ctx.Err())
+	// fmt.Println(context.Cause(ctx), ctx.Err())
+	// cancel(nil)
+	// fmt.Println(<-ctx.Done(), context.Cause(ctx), ctx.Err())
+	// fmt.Println(<-ctx.Done(), context.Cause(ctx), ctx.Err())
+	// cancel(errors.New("mlee"))
+	return context.Cause(ctx)
+}
+
+func checkChannelClosed() {
+	var m1 map[string]int
+	if m1 == nil {
+		fmt.Println("mleeeeeeeeeeee")
+	}
+	m := make(map[string]int, 10)
+	m["mlee"] = 1
+	fmt.Println(len(m))
+	ch := make(chan int, 10)
+	ch <- 1
+	fmt.Println(len(ch), cap(ch))
+	close(ch)
+	fmt.Println(len(ch), cap(ch))
+    // close(ch)
+    // select {
+    // case ch <- 1:
+    //     fmt.Println("Sent successfully")
+    // default:
+    //     fmt.Println("Channel is closed")
+    // }
+	// time.Sleep(2*time.Second)
+	// ch <- 1
+}
+
+func testMapSort() {
+	m := map[int][]int{
+		1: []int{1, 2, -1, -10, 3},
+		4: []int{10, 2, 1, -20, 3},
+		2: []int{100, 20000, 3, -10, -100},
+	}
+	for _, v := range m {
+		sort.Slice(v, func(i, j int) bool {
+			return v[i] > v[j]
+		})
+	}
+	fmt.Println(m)
+}
+
+func testAtomic() {
+	var v atomic.Value
+	v.Store(1)
+}
+
+type complexData1 map[int]string
+type complexData2 map[string]complexData1
+
+func testComplexData() {
+	c := make(complexData2, 12)
+	c["mlee1"] = complexData1{10: "ok", 11: "bad"}
+	c["mlee2"] = complexData1{1022: "ok22", 1122: "bad222"}
+	fmt.Println(c)
+}
+
+
+func testContainer() {
+	// list.List
+	// heap.Fix 
+	// ring.New(3)
+}
+
+func testNilMapOrSlice() {
+	var m map[int]int
+	fmt.Println(m[11])
+	m1 := map[int]int(nil)
+	val, ok := m1[11]
+	fmt.Println(val, ok)
+	
+
+	// var sli []int
+	// fmt.Println(sli[0]) // panic
+	sli1 := []int(nil)
+	fmt.Println(sli1[0]) // panic
+}
+
+func testCap() {
+	var b bool
+	var b1 byte
+	var i int
+	fmt.Println(unsafe.Sizeof(b), unsafe.Sizeof(b1),unsafe.Sizeof(i)) // 1 1 8
+}
+
+
+// 实现下bitset
+func testBits() {
+	x := uint(0b1010101010) // 最高位1的位数
+	len := bits.Len(x)
+	fmt.Printf("The length of %b is %d\n", x, len)
+
+	x1 := uint(0b0100000111)
+	len1 := bits.Len(x1)
+	fmt.Printf("The length of %b is %d\n", x1, len1)
+}
+
+func testStringSplit() {
+	const s = "12_"
+	ss := strings.Split(s, "_")
+	fmt.Println(len(ss), ss)
+	fmt.Println(strconv.Atoi(""))
+}
+
+
 
 
