@@ -1,7 +1,7 @@
 package main
 
 func main() {
-	// testMap()
+	testMap()
 	// testSlice1()
 	// testSlice2()
 	// testNoCopy()
@@ -27,5 +27,18 @@ func main() {
 	// testNilMapOrSlice()
 	// testCap()
 	// testBits()
-	testStringSplit()
+	// testStringSplit()
+	// testDecimal()
+	// testLangTrans()
+	// Test_if()
+	// TestAppend()
+	// TestChannel()
+	// testInt()
+	// testEmptyArray()
+	// TestSkills()
+	// TestPipeline()
+	// testDefer()
+	// testCtx4()
+	// testDefer1()
+	// isNil()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/bits"
 	"math/rand"
+	"reflect"
 	"runtime"
 	"sort"
 	"strconv"
@@ -15,7 +16,9 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/axgle/mahonia"
 	errs "github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -51,6 +54,12 @@ func testMap() {
 	// map[1:300 2:200 3:10 30:2000] map[1:30 2:200 3:10 30:2000]
 	// map[1:300 2:200 3:10 30:2000] map[1:30 2:200 3:10]
 	// 以上两种情况都有可能
+
+	var m map[uint8]map[uint32]string
+	fmt.Println("取nil map: ", m[1][12])
+
+	var m1 map[uint8]map[uint32]map[byte]string
+	fmt.Println("取nil map: ", m1[1][12][122])
 }
 
 func testSlice1() {
@@ -105,6 +114,7 @@ var _ = func() {
 	_ = time.After(5 * time.Second)
 }
 
+type DoNotCopy [0]sync.Mutex // 也实现sync.Locker接口
 type MyStruct struct {
 	noCopy noCopy
 	// 其他字段...
@@ -117,11 +127,10 @@ func testNoCopy() {
 
 	// 尝试复制 MyStruct 会导致编译错误
 	// 因为复制会复制 noCopy，而 noCopy 有一个私有的 lock() 方法
-	ms2 := ms1 // 这会导致编译错误
+	ms2 := ms1 // 使用`go vet`可检查出错误
 
 	// 如果我们注释掉 noCopy 的嵌入，那么上面的复制将工作正常
-	// 但是，通常我们不想复制这样的结构体，因为它们可能包含不应该被复制的资源或状态
-
+	// 但是，通常我们不想复制这样的结构体，因为它们可能包含不应该被复制的资源或状态,比如复制了sync.WaitGroup对象后，那么对象的Add和Done这一对操作就不匹配了，就会导致死锁问题
 	fmt.Println("MyStruct created", ms1)
 	fmt.Println("MyStruct created", ms1, ms2)
 }
@@ -135,6 +144,7 @@ func testNoCopy() {
 // Note that it must not be embedded, due to the Lock and Unlock methods.
 type noCopy struct{}
 
+// 实现了sync.Locker接口
 // Lock is a no-op used by -copylocks checker from `go vet`.
 func (*noCopy) Lock()   {}
 func (*noCopy) Unlock() {}
@@ -258,6 +268,28 @@ func testCtx3() {
 	time.Sleep(500 * time.Second)
 	fmt.Println("end")
 }
+
+// func testCtx4(){
+// 	ctx := context.Background()
+// 	ctx1 := testCtx4_(&ctx)
+// 	fmt.Println("222", ctx.Value("key"))
+// 	fmt.Println("333", ctx1.Value("key"))
+// }
+// func testCtx4_(ctx *context.Context) context.Context{
+// 	val := (*ctx).Value("key")
+//     if val == nil {
+//         // 如果上下文值为空，则创建一个新的上下文值
+//         val = "default"
+//         ctx = context.WithValue(*ctx, "key", val)
+//     } else {
+//         // 如果上下文值不为空，则修改其值
+//         val = "new value"
+//         ctx = context.WithValue(ctx, "key", val)
+//     }
+//     // 在函数中使用修改后的上下文值
+//     fmt.Println("111", ctx.Value("key"))
+// 	return ctx
+// }
 
 // 1. 是否可以使用任务池
 // 2. 任务太多如何处理？
@@ -410,6 +442,43 @@ func testPanic() {
 	panic(123)
 }
 
+// 两阶段延迟执行
+func testDefer() {
+	setup := func() {
+		fmt.Println("setup")
+	}
+	f := func() func() {
+		setup()
+		return func() {
+			fmt.Println("tear down")
+		}
+	}
+	defer f()()
+	fmt.Println("test defer")
+}
+
+func testDefer1() {
+	a := testDefer1_()
+	fmt.Println(a)
+}
+
+func testDefer1_() (a int) { // 这里需要声明一个具名的返回值变量，才能修改，对于匿名的临时变量无法被修改
+	a = 10
+	defer func() func() {
+		fmt.Println("set up", a)
+		fmt.Println("set up")
+		a = 20
+		return func() {
+			fmt.Println("tear down", a)
+			a = 30
+			fmt.Println("tear down")
+		}
+	}()() // 注意一个括号就是调用一次，defer 仅会将最外层的函数推进调用栈中
+
+	fmt.Println("testDefer1", a)
+	return a + 100
+}
+
 func testPanic1() {
 	defer func() {
 		rec()
@@ -445,23 +514,23 @@ type StA struct {
 	a string
 }
 
-func (s StA)f1() {
+func (s StA) f1() {
 	fmt.Println(s.a)
 }
 
-func (s StA)f2() {
-	fmt.Println(s.a+"mleeee")
+func (s StA) f2() {
+	fmt.Println(s.a + "mleeee")
 }
 
-type StB  struct {
+type StB struct {
 	StA // 通过嵌入结构体实现了继承(实际上，是一种组合)
 }
 
 func (s StB) f1() {
-	fmt.Println(s.a+"msl")
+	fmt.Println(s.a + "msl")
 }
 
-func testInheritance(){
+func testInheritance() {
 	s := StB{StA: StA{"111111"}}
 	testInterface(s)
 }
@@ -474,7 +543,7 @@ func testInterface(s AIn) { // 通过接口实现多态
 func testCancelCtx1() {
 	fmt.Println(testCancelCtx())
 }
-func testCancelCtx()error {
+func testCancelCtx() error {
 	ctx, cancel := context.WithCancelCause(context.Background())
 	defer cancel(nil)
 	// cancel(errors.New("mlee1111")) // 仅获取到第一次ctx cancel的错误。后面再次取消不会有任何动作，直接返回
@@ -502,13 +571,13 @@ func checkChannelClosed() {
 	fmt.Println(len(ch), cap(ch))
 	close(ch)
 	fmt.Println(len(ch), cap(ch))
-    // close(ch)
-    // select {
-    // case ch <- 1:
-    //     fmt.Println("Sent successfully")
-    // default:
-    //     fmt.Println("Channel is closed")
-    // }
+	// close(ch)
+	// select {
+	// case ch <- 1:
+	//     fmt.Println("Sent successfully")
+	// default:
+	//     fmt.Println("Channel is closed")
+	// }
 	// time.Sleep(2*time.Second)
 	// ch <- 1
 }
@@ -542,10 +611,9 @@ func testComplexData() {
 	fmt.Println(c)
 }
 
-
 func testContainer() {
 	// list.List
-	// heap.Fix 
+	// heap.Fix
 	// ring.New(3)
 }
 
@@ -555,7 +623,6 @@ func testNilMapOrSlice() {
 	m1 := map[int]int(nil)
 	val, ok := m1[11]
 	fmt.Println(val, ok)
-	
 
 	// var sli []int
 	// fmt.Println(sli[0]) // panic
@@ -567,9 +634,8 @@ func testCap() {
 	var b bool
 	var b1 byte
 	var i int
-	fmt.Println(unsafe.Sizeof(b), unsafe.Sizeof(b1),unsafe.Sizeof(i)) // 1 1 8
+	fmt.Println(unsafe.Sizeof(b), unsafe.Sizeof(b1), unsafe.Sizeof(i)) // 1 1 8
 }
-
 
 // 实现下bitset
 func testBits() {
@@ -589,6 +655,218 @@ func testStringSplit() {
 	fmt.Println(strconv.Atoi(""))
 }
 
+func testDecimal() {
+	v := decimal.New(2, 1e7)
+	v1 := decimal.New(2, 7)
+	fmt.Println(v, v1)
+}
+
+func testLangTrans() {
+	enc := mahonia.NewEncoder("zh-tw")
+	//converts a  string from UTF-8 to gbk encoding.
+	fmt.Println(enc.ConvertString("hello,世界"))
+}
+
+func Test_if() {
+	var a int = 10
+	a0 := _if(true, (*int)(nil), &a).(*int)
+	fmt.Println(a0)
+	// a1 := _if(true, nil, &a).(*int) // panic
+	// fmt.Println(a1)
+	a2 := _if(false, nil, &a).(*int)
+	fmt.Println(*a2)
+}
+
+var _if = func(cond bool, a, b interface{}) interface{} {
+	if cond {
+		return a
+	}
+	return b
+}
+
+func If(cond bool, f1, f2 func() error) error {
+	f := func(f func() error) error {
+		if f == nil {
+			return nil
+		}
+		return f()
+	}
+	if cond {
+		return f(f1)
+	}
+	return f(f2)
+}
+
+func TestAppend() {
+	var a, b []int
+	if a == nil {
+		fmt.Println("aaa")
+	}
+	c := append(a, b...)
+	c = append(c, nil...)
+	fmt.Println(len(c), c)
+}
+
+func TestChannel() {
+	results := make(chan int, 10)
+	// go func(){
+	// 	results <- 12
+	// 	close(results)
+	// }()
+
+	for result := range results {
+		fmt.Println(result)
+	}
+}
+
+func testInt() {
+	a := 2_040_051_011 // 使用下划线分隔，便于查看
+	fmt.Println(a, a+301)
+	fmt.Printf("%[0]s, %[1]s, %[0]s, %d", 12, 13, 14, 15)
+}
+
+func testEmptyArray() {
+	var a [0]byte
+	m := map[int][0]byte{1: [0]byte{}}
+	m1 := map[int][0]struct{}{1: [0]struct{}{}}
+	fmt.Println(a, m, m1)
+}
+
+// https://blog.csdn.net/u013272009/article/details/135876694
+func TestSkills() {
+	// https://mytechshares.com/2021/12/14/gopher-should-know-struct-ops/
+	type NoUnkeyedLiterals struct{}
+	type ab struct {
+		aa int
+	}
+	type a struct {
+		// _ NoUnkeyedLiterals // 忽略该字段，就算赋值了也不会有值，这样要求声明 a 结构体就需要显示指定每个字段的值了，采用默认的顺序赋值的方式可能有隐患，比如,将结构体中同类型字段顺序修改，就会有问题（编译发现不了）
+		A int
+		B string
+		C string
+		ab
+	}
+	a1 := a{A: 1, B: "12", ab: ab{}}
+	// a2 := a{1, "12", ab{}} // too few values in struct literal of type a
+	fmt.Println(a1)
+}
+
+// Processor 定义处理函数类型
+type Processor func(in chan interface{}) chan interface{}
+
+// CreatePipeline 创建并启动处理流水线
+func CreatePipeline(procs ...Processor) (inChan chan interface{}, outChan chan interface{}) {
+	// 创建一个初始的输入通道和最终的输出通道
+	inChan = make(chan interface{})
+	outChan = make(chan interface{})
+
+	// 使用WaitGroup等待所有处理器启动
+	var wg sync.WaitGroup
+	wg.Add(len(procs))
+
+	// 逐个串联处理器
+	var currentChan chan interface{} = inChan
+	for _, proc := range procs {
+		nextChan := make(chan interface{}, 1) // 创建下一个处理器的输入通道
+
+		go func(proc Processor, inputChan chan interface{}, outputChan chan interface{}, wg *sync.WaitGroup) {
+			defer wg.Done() // 通知WaitGroup当前处理器已启动
+			for data := range inputChan {
+				proc(inputChan)    // 执行当前处理器逻辑，可能不会用到传入的data，具体取决于处理器实现
+				outputChan <- data // 将数据传递到下一个处理器
+			}
+			close(outputChan) // 当前处理器处理完数据后，关闭输出通道
+		}(proc, currentChan, nextChan, &wg)
+
+		currentChan = nextChan // 更新当前通道为下一个处理器的输入通道
+	}
+
+	// 等待所有处理器启动
+	wg.Wait()
+
+	// 返回输入通道和最终输出通道
+	return inChan, outChan
+}
+
+// 示例处理器：打印接收到的数据，并原样发送到输出通道
+func printProcessor() Processor {
+	return func(in chan interface{}) chan interface{} {
+		out := make(chan interface{}, 1)
+		go func() {
+			for data := range in {
+				fmt.Printf("Processing: %v\n", data)
+				out <- data
+			}
+			close(out)
+		}()
+		return out
+	}
+}
+
+// https://juejin.cn/post/7202153645441318967
+func TestPipeline() {
+	inChan, outChan := CreatePipeline(printProcessor(), printProcessor(), printProcessor())
+
+	// 向流水线发送数据
+	inChan <- "Hello, Pipeline!"
+	inChan <- "Another message."
+	close(inChan) // 关闭输入通道，表示没有更多的数据了
+
+	// 读取并打印最终结果
+	for result := range outChan {
+		fmt.Printf("Result: %v\n", result)
+	}
+}
+type iface interface{
+	f()
+}
+type st struct {
+	a int
+}
+
+func(st) f(){}
+func isNil() {
 
 
+	m := map[int]st{}
 
+	f1 := func(a int)(iface, bool){
+		v1, ok := m[a]
+		return v1, ok
+	}
+	v, ok := f1(1)
+	fmt.Println(v, ok)
+	fmt.Println(IsNilPtr(v))
+
+	// fmt.Println(reflect.ValueOf(v).IsNil())
+}
+
+// IsNilPtr 判断接口是否为空指针
+func IsNilPtr(i any) bool {
+	if i == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Pointer, reflect.UnsafePointer:
+		return v.IsNil()
+	default:
+		return false
+	}
+}
+
+// IsNilPtr 判断接口是否为空指针(nil说明已经是引用类型或者指针类型了，比如struct类型就会panic)
+func _IsNilPtr(i any) bool {
+	if i == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Pointer, reflect.UnsafePointer:
+		return v.IsNil()
+	default:
+		return false
+	}
+}
