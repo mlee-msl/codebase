@@ -9,6 +9,7 @@ import (
 	"sort"
 	"sync"
 	"time"
+	"unsafe"
 
 	errs "github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -84,6 +85,33 @@ func testSlice2() {
 
 	fmt.Println("after for range loop, r =", r)
 	fmt.Println("after for range loop, a =", a)
+}
+
+// slice切片的底层结构。
+// note: a[start:end],其中start>=0, end <= cap(a), 不指定就是len(a)
+// type slice struct {
+//     array unsafe.Pointer
+//     len   int
+//     cap   int
+// }
+
+func testSlice3() {
+	f1 := func(a []int) {
+		a = append(a, 1)
+		a = append(a, 1)
+		a = append(a, 1)
+		a = append(a, 1)
+	}
+	_ = func(a []int) {
+		a = append(a, 1)
+		a = append(a, 10)
+	}
+	a := make([]int, 0, 2)
+	a = append(a, 110)
+	fmt.Println(a)
+	f1(a)
+	fmt.Println(a, len(a))
+	fmt.Println(a[:cap(a)], a[:])
 }
 
 var _ = func() {
@@ -440,23 +468,23 @@ type StA struct {
 	a string
 }
 
-func (s StA)f1() {
+func (s StA) f1() {
 	fmt.Println(s.a)
 }
 
-func (s StA)f2() {
-	fmt.Println(s.a+"mleeee")
+func (s StA) f2() {
+	fmt.Println(s.a + "mleeee")
 }
 
-type StB  struct {
+type StB struct {
 	StA // 通过嵌入结构体实现了继承(实际上，是一种组合)
 }
 
 func (s StB) f1() {
-	fmt.Println(s.a+"msl")
+	fmt.Println(s.a + "msl")
 }
 
-func testInheritance(){
+func testInheritance() {
 	s := StB{StA: StA{"111111"}}
 	testInterface(s)
 }
@@ -466,4 +494,28 @@ func testInterface(s AIn) { // 通过接口实现多态
 	s.f2()
 }
 
+func testTypeSize() {
+	var a int
+	fmt.Println("size int", unsafe.Sizeof(a))
+}
 
+func testTicker() {
+	_ = time.NewTimer(1 * time.Second).C // time.After(1*time.Second)
+	// t := time.NewTicker(100 * time.Millisecond)
+	t := time.NewTicker(1 * time.Second)
+	defer func() {
+		t.Stop()
+	}()
+	for {
+		select {
+		case t_ := <-time.After(3 * time.Second):
+			fmt.Println("-----end-----", t_)
+			return
+			// case t_ := <-t.C: // ? 为啥不能命中第一个case
+		// fmt.Println(t_)
+		default: // ? 为啥不能命中第一个case
+			// 	time.Sleep(1 * time.Second)
+			// 	fmt.Println("default")
+		}
+	}
+}

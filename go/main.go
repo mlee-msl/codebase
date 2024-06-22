@@ -4,6 +4,7 @@ func main() {
 	// testMap()
 	// testSlice1()
 	// testSlice2()
+	testSlice3()
 	// testNoCopy()
 	// testCtx1()
 	// testCtx2()
@@ -18,5 +19,7 @@ func main() {
 	// testPanic()
 	// testPanic1()
 	// testPanic2()
-	testInheritance()
+	// testInheritance()
+	// testTypeSize()
+	// testTicker()
 }
