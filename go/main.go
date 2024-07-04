@@ -1,10 +1,10 @@
 package main
 
 func main() {
-	testMap()
+	// testMap()
 	// testSlice1()
 	// testSlice2()
-	testSlice3()
+	// testSlice3()
 	// testNoCopy()
 	// testCtx1()
 	// testCtx2()
@@ -44,4 +44,8 @@ func main() {
 	// isNil()
 	// testTypeSize()
 	// testTicker()
+	// testIOTA()
+	// TestObjSize()
+	TestSyncPool()
+	// TestNonPool()
 }

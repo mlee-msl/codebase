@@ -62,3 +62,24 @@ func TestIsNilPtr(t *testing.T) {
 		convey.So(b, convey.ShouldBeFalse)
 	})
 }
+
+func BenchmarkTestNonPool(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TestNonPool()
+	}
+}
+
+func BenchmarkTestSyncPool(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TestSyncPool()
+	}
+}
+
+func BenchmarkTestSyncPool2(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TestSyncPool2()
+	}
+}

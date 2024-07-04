@@ -40,6 +40,7 @@ func ScopeCheck() { // 作用域验证
 }
 
 func testMap() {
+	fmt.Println(time.Date(2012+100, time.December, 1, 1, 1, 1, 1, time.Local).Unix())
 	a := map[int]int{1: 30, 2: 20, 3: 10}
 	b := make(map[int]int, len(a))
 	for k, v := range a {
@@ -59,7 +60,7 @@ func testMap() {
 	fmt.Println("取nil map: ", m[1][12])
 
 	var m1 map[uint8]map[uint32]map[byte]string
-	fmt.Println("取nil map: ", m1[1][12][122])
+	fmt.Printf("取nil map: <%v>\n", m1[1][12][122])
 }
 
 func testSlice1() {
@@ -650,11 +651,14 @@ func testNilMapOrSlice() {
 	m1 := map[int]int(nil)
 	val, ok := m1[11]
 	fmt.Println(val, ok)
+	var m2 map[int]map[string][0]func()
+	val1, ok := m2[1]["mlee"]
+	fmt.Println(val1, ok)
 
 	// var sli []int
 	// fmt.Println(sli[0]) // panic
-	sli1 := []int(nil)
-	fmt.Println(sli1[0]) // panic
+	// sli1 := []int(nil)
+	// fmt.Println(sli1[0]) // panic
 }
 
 func testCap() {
@@ -749,7 +753,7 @@ func TestChannel() {
 func testInt() {
 	a := 2_040_051_011 // 使用下划线分隔，便于查看
 	fmt.Println(a, a+301)
-	fmt.Printf("%[0]s, %[1]s, %[0]s, %d", 12, 13, 14, 15)
+	// fmt.Printf("%[0]s, %[1]s, %[0]s, %d", 12, 13, 14, 15)
 }
 
 func testEmptyArray() {
@@ -922,4 +926,613 @@ func testTicker() {
 			// 	fmt.Println("default")
 		}
 	}
+}
+
+func testIOTA() {
+	// iota的值每一行自动加1,后面的行计算方式与前面的行完全一样
+	const (
+		_ = iota // iota的值每一行自动加1
+
+		_
+		a
+		b
+		c = iota
+		d
+		e = 10
+		f1
+		f2
+		f3
+		g = iota + 1 // 后面都是iota+1，只不过iota每一行自动加1
+		h            // iota+1
+	)
+	const (
+		v0 = 1000
+		v1 = 1024 // 后面的自动和v1保持一样，除非另外定义
+		v2
+		v3
+		v4 = 100 // 后面的自动和v4保持一样，除非另外定义
+		v5
+		v6
+	)
+	const (
+		s1 = iota
+		s2 = iota
+		_
+
+		_  = iota
+		s3 = iota
+		_  = iota + 1 // 5+1
+		s4            // 6+1
+	)
+	const (
+		t1 = 1 << iota
+		t2
+		t3
+		t4
+		t5
+		t6
+		t0  = t6 - iota
+		t10 = t0 + iota
+		t11
+		t12
+	)
+	const (
+		One      = 1 << iota         // 1
+		Two                          // 2
+		Four                         // 4
+		Eight                        // 8
+		Nine     = One | Eight       // 9
+		Ten      = Two | Eight       // 10
+		Eleven   = One | Two | Eight // 11
+		Twelve   = 1 << iota         // 12
+		Thirteen                     // 13
+		Fourteen                     // 14
+		Fifteen                      // 15
+		Sixteen                      // 16
+	)
+
+	type FinancialDataType uint32
+
+	const (
+		_ FinancialDataType = iota // 零值占位，不采用
+		// 以下为可按需获取的数据类型：采用位掩码的方式初始化
+		BalanceSheetFinancialData = 1 << (iota - 1) // 资产负债表数据
+		BuybackFinancialData                        // 回购数据
+		CashFlowFinancialData                       // 现金流量表数据
+		IncomeFinancialData                         // 利润表数据
+		MainIndexFinancialData                      // 关键指标数据
+		placeholder
+		AllOnDemandFinancialData = placeholder - 1 // 表示所有的关键数据类型
+		_
+		resetFinancialDataType = AllOnDemandFinancialData - iota
+		// 以下为非可按需获取的数据类型采用线性加1的方式初始化
+		OperationFinancialData = resetFinancialDataType + iota // 财报的运营数据
+		CrawlerFinancialData                                   // 财报的爬虫数据
+		BrightRiskData                                         // 亮点和风险点数据
+		FinancialExtraData                                     // 财报相关的其他数据
+
+		FinancialDataTypeTotalNums = iota
+	)
+	fmt.Println(a, b, c, d, e, f1, f2, f3, g, h)
+	fmt.Println(v0, v1, v2, v3, v4, v5, v6)
+	fmt.Println(s1, s2, s3, s4)
+	fmt.Println(t1, t2, t3, t4, t5, t6, t10, t11, t12)
+	fmt.Println(One, Two, Four, Eight, Nine, Ten, Eleven, Twelve, Thirteen, Fourteen, Fifteen, Sixteen)
+	fmt.Println(BalanceSheetFinancialData, BuybackFinancialData, CashFlowFinancialData, IncomeFinancialData, MainIndexFinancialData, "-----", AllOnDemandFinancialData, "---",
+		OperationFinancialData, CrawlerFinancialData, BrightRiskData, FinancialExtraData, FinancialDataTypeTotalNums)
+	aaa := MainIndexFinancialData | IncomeFinancialData
+	bbb := aaa | AllOnDemandFinancialData
+	fmt.Println(aaa&BalanceSheetFinancialData > 0, aaa&BuybackFinancialData > 0, aaa&CashFlowFinancialData > 0, aaa&IncomeFinancialData > 0, aaa&MainIndexFinancialData > 0, AllOnDemandFinancialData, "-----",
+		bbb&BalanceSheetFinancialData > 0, bbb&BuybackFinancialData > 0, bbb&CashFlowFinancialData > 0, bbb&IncomeFinancialData > 0, bbb&MainIndexFinancialData > 0)
+
+	fmt.Println("----", 0&AllOnDemandFinancialData == 0, BalanceSheetFinancialData&AllOnDemandFinancialData == 0, (BalanceSheetFinancialData|MainIndexFinancialData)&AllOnDemandFinancialData == 0)
+}
+
+func TestObjSize() {
+	s := f10HandlerHK{}
+	fmt.Println(unsafe.Sizeof(&s))
+
+	s1 := new(int)
+	fmt.Println(unsafe.Sizeof(s1))
+
+	s2 := new(string)
+	fmt.Println(unsafe.Sizeof(s2))
+}
+
+func TestSyncPool() {
+	p := sync.Pool{
+		New: func() any {
+			return f10HandlerHK{}
+		},
+	}
+
+	var (
+		counter atomic.Int32
+		wg      sync.WaitGroup
+	)
+	for i := 1; i <= 100; i++ {
+		wg.Add(1)
+		go func() {
+			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
+			defer func() {
+				wg.Done()
+			}()
+			a_ := p.Get().(f10HandlerHK)
+			defer func() {
+				// fmt.Println("111", a_.s)
+				p.Put(a_)
+			}()
+			
+			// if a_.s == "mlee" {
+				_ = counter.Add(1)
+			// 	fmt.Printf("<%+v>\n", a_.s)
+			// }
+			a_.s = "mlee"
+			// fmt.Println(a_.s)
+		}()
+	}
+	wg.Wait()
+	// fmt.Println("end", counter.Load())
+}
+
+func TestSyncPool2() {
+	p := sync.Pool{
+		New: func() any {
+			return new(f10HandlerHK)
+		},
+	}
+
+	var (
+		counter atomic.Int32
+		wg      sync.WaitGroup
+	)
+	for i := 1; i <= 100; i++ {
+		wg.Add(1)
+		go func() {
+			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
+			defer func() {
+				wg.Done()
+			}()
+			a_ := p.Get().(*f10HandlerHK)
+			defer func() {
+				// fmt.Println("111", a_.s)
+				p.Put(a_)
+			}()
+			
+			// if a_.s == "mlee" {
+				_ = counter.Add(1)
+			// 	fmt.Printf("<%+v>\n", a_.s)
+			// }
+			a_.s = "mlee"
+			// fmt.Println(a_.s)
+		}()
+	}
+	wg.Wait()
+	// fmt.Println("end", counter.Load())
+}
+
+func TestNonPool() {
+	var (
+		counter atomic.Int32
+		wg      sync.WaitGroup
+	)
+	for i := 1; i <= 100; i++ {
+		wg.Add(1)
+		go func(){
+			time.Sleep(time.Duration(rand.Intn(4)+1) * time.Millisecond)
+			defer func() {
+				wg.Done()
+			}()
+			a_ := f10HandlerHK{}
+			_ = counter.Add(1)
+			a_.s = "mlee"
+			// fmt.Println(a_.s)
+		}()
+	}
+	wg.Wait()
+	// fmt.Println("end", counter.Load())
+}
+
+func init() {
+	rand.Seed(time.Now().Unix())
+}
+
+type f10HandlerHK struct {
+	f10FinanceIndicatorHK
+
+	renderDependency
+	s string
+}
+
+type renderDependency struct {
+	indicatorResults AllIndicatorResults
+
+	currencyDetails map[int32]struct{ currencyUnit, currencyCode string }
+	brightRiskData  BrightRiskDataDetail
+	extraData       FinancialExtraDataDetail
+}
+
+type FinancialExtraDataDetail struct {
+	PlateId     uint64  // 个股所属的行业板块
+	MarketValue float64 // 个股市值（扩大1000， 单位已转为港币）
+}
+
+type BrightRiskDataDetail struct {
+	_ NoUnkeyedLiterals
+
+	FinancialType   uint8
+	BrightIndicator map[int32]Score
+	RiskIndicator   map[int32]Score
+}
+
+// Score 风险提示与投资亮点得分
+type Score struct {
+	_ NoUnkeyedLiterals
+
+	TotalScore      int64 // 指标的总分数
+	HorizontalScore uint8 // 指标的横向分数
+	VerticalScore   uint8 // 指标的纵向分数
+}
+
+type f10FinanceIndicatorHK struct {
+	mainIndexHK
+	incomeHK
+	balanceSheetHK
+	cashFlowHK
+	buybackHK
+	operationAndCrawlerHK
+}
+
+type FinancialUniqueKey string
+type mainIndexHK struct {
+	mainIndexDetails map[FinancialUniqueKey]*HK_BalanceSheetGEHK
+
+	assistCalculation
+}
+
+type incomeHK struct {
+	incomeDetails map[FinancialUniqueKey]*HK_BalanceSheetGEHK
+
+	assistCalculation
+}
+
+type assistCalculation struct {
+	mergeKeysByFinancialType map[int32][]FinancialUniqueKey
+	allKeys                  []FinancialUniqueKey
+}
+
+type HK_BalanceSheetGEHK struct {
+	UniqueKey                 *string  `protobuf:"bytes,142,opt,name=unique_key,json=uniqueKey" json:"unique_key,omitempty"`
+	F10FinancialYear          *uint32  `protobuf:"varint,143,opt,name=f10_financial_year,json=f10FinancialYear" json:"f10_financial_year,omitempty"`
+	F10FinancialType          *uint32  `protobuf:"varint,144,opt,name=f10_financial_type,json=f10FinancialType" json:"f10_financial_type,omitempty"`
+	Type                      *uint32  `protobuf:"varint,131,opt,name=type" json:"type,omitempty"`
+	EndDate                   *uint32  `protobuf:"varint,132,opt,name=EndDate" json:"EndDate,omitempty"`
+	InfoSource                *string  `protobuf:"bytes,133,opt,name=InfoSource" json:"InfoSource,omitempty"`
+	CompanyNature             *uint32  `protobuf:"varint,134,opt,name=CompanyNature" json:"CompanyNature,omitempty"`
+	CurrencyUnit              *string  `protobuf:"bytes,135,opt,name=CurrencyUnit" json:"CurrencyUnit,omitempty"`
+	CurrencyCode              *string  `protobuf:"bytes,141,opt,name=CurrencyCode" json:"CurrencyCode,omitempty"`
+	AccountingStandards       *string  `protobuf:"bytes,136,opt,name=AccountingStandards" json:"AccountingStandards,omitempty"`
+	PeriodMark                *uint32  `protobuf:"varint,137,opt,name=PeriodMark" json:"PeriodMark,omitempty"`
+	Mark                      *uint32  `protobuf:"varint,138,opt,name=Mark" json:"Mark,omitempty"`
+	InfoPublDate              *uint32  `protobuf:"varint,139,opt,name=InfoPublDate" json:"InfoPublDate,omitempty"`
+	FiscalYear                *uint32  `protobuf:"varint,140,opt,name=FiscalYear" json:"FiscalYear,omitempty"`
+	Inventories               *float64 `protobuf:"fixed64,1,opt,name=Inventories" json:"Inventories,omitempty"`
+	DeveAndForSalePro         *float64 `protobuf:"fixed64,2,opt,name=DeveAndForSalePro" json:"DeveAndForSalePro,omitempty"`
+	AccountReceivables        *float64 `protobuf:"fixed64,3,opt,name=AccountReceivables" json:"AccountReceivables,omitempty"`
+	BillReceivable            *float64 `protobuf:"fixed64,4,opt,name=BillReceivable" json:"BillReceivable,omitempty"`
+	AssociateFundRece         *float64 `protobuf:"fixed64,5,opt,name=AssociateFundRece" json:"AssociateFundRece,omitempty"`
+	CWrksCliMonReceCA         *float64 `protobuf:"fixed64,6,opt,name=CWrksCliMonReceCA" json:"CWrksCliMonReceCA,omitempty"`
+	InterestReceivables       *float64 `protobuf:"fixed64,7,opt,name=InterestReceivables" json:"InterestReceivables,omitempty"`
+	InsOtherReceCA            *float64 `protobuf:"fixed64,8,opt,name=InsOtherReceCA" json:"InsOtherReceCA,omitempty"`
+	OtherAccounetrece         *float64 `protobuf:"fixed64,9,opt,name=OtherAccounetrece" json:"OtherAccounetrece,omitempty"`
+	TaxReceivable             *float64 `protobuf:"fixed64,10,opt,name=TaxReceivable" json:"TaxReceivable,omitempty"`
+	PrepaidRentCA             *float64 `protobuf:"fixed64,11,opt,name=PrepaidRentCA" json:"PrepaidRentCA,omitempty"`
+	Cash                      *float64 `protobuf:"fixed64,12,opt,name=Cash" json:"Cash,omitempty"`
+	ShortTermDeposit          *float64 `protobuf:"fixed64,13,opt,name=ShortTermDeposit" json:"ShortTermDeposit,omitempty"`
+	FixedDepositCA            *float64 `protobuf:"fixed64,14,opt,name=FixedDepositCA" json:"FixedDepositCA,omitempty"`
+	DepositInCentralBank      *float64 `protobuf:"fixed64,15,opt,name=DepositInCentralBank" json:"DepositInCentralBank,omitempty"`
+	MortagageDeposit          *float64 `protobuf:"fixed64,16,opt,name=MortagageDeposit" json:"MortagageDeposit,omitempty"`
+	AdvancesTCusts            *float64 `protobuf:"fixed64,17,opt,name=AdvancesTCusts" json:"AdvancesTCusts,omitempty"`
+	LendCapital               *float64 `protobuf:"fixed64,18,opt,name=LendCapital" json:"LendCapital,omitempty"`
+	ShortTermInvest           *float64 `protobuf:"fixed64,19,opt,name=ShortTermInvest" json:"ShortTermInvest,omitempty"`
+	HForSaleAssetsCA          *float64 `protobuf:"fixed64,20,opt,name=HForSaleAssetsCA" json:"HForSaleAssetsCA,omitempty"`
+	FinAetAtFValTPLCA         *float64 `protobuf:"fixed64,21,opt,name=FinAetAtFValTPLCA" json:"FinAetAtFValTPLCA,omitempty"`
+	DerFinInstsCA             *float64 `protobuf:"fixed64,22,opt,name=DerFinInstsCA" json:"DerFinInstsCA,omitempty"`
+	OtherCurrentAssets        *float64 `protobuf:"fixed64,23,opt,name=OtherCurrentAssets" json:"OtherCurrentAssets,omitempty"`
+	CAExcepItems              *float64 `protobuf:"fixed64,24,opt,name=CAExcepItems" json:"CAExcepItems,omitempty"`
+	CAAdjItems                *float64 `protobuf:"fixed64,25,opt,name=CAAdjItems" json:"CAAdjItems,omitempty"`
+	TotalCurrentAssets        *float64 `protobuf:"fixed64,26,opt,name=TotalCurrentAssets" json:"TotalCurrentAssets,omitempty"`
+	FixedAssets               *float64 `protobuf:"fixed64,27,opt,name=FixedAssets" json:"FixedAssets,omitempty"`
+	WorkshopAndEquipment      *float64 `protobuf:"fixed64,28,opt,name=WorkshopAndEquipment" json:"WorkshopAndEquipment,omitempty"`
+	InvestProperty            *float64 `protobuf:"fixed64,29,opt,name=InvestProperty" json:"InvestProperty,omitempty"`
+	ConstruInProcess          *float64 `protobuf:"fixed64,30,opt,name=ConstruInProcess" json:"ConstruInProcess,omitempty"`
+	LandUsufruct              *float64 `protobuf:"fixed64,31,opt,name=LandUsufruct" json:"LandUsufruct,omitempty"`
+	AdvancePayment            *float64 `protobuf:"fixed64,32,opt,name=AdvancePayment" json:"AdvancePayment,omitempty"`
+	PrepaidRentNCA            *float64 `protobuf:"fixed64,33,opt,name=PrepaidRentNCA" json:"PrepaidRentNCA,omitempty"`
+	LongtermReceivableAccount *float64 `protobuf:"fixed64,34,opt,name=LongtermReceivableAccount" json:"LongtermReceivableAccount,omitempty"`
+	CWrksCliMonReceNCA        *float64 `protobuf:"fixed64,35,opt,name=CWrksCliMonReceNCA" json:"CWrksCliMonReceNCA,omitempty"`
+	InsOtherReceNCA           *float64 `protobuf:"fixed64,36,opt,name=InsOtherReceNCA" json:"InsOtherReceNCA,omitempty"`
+	DevelopmentExpenditure    *float64 `protobuf:"fixed64,37,opt,name=DevelopmentExpenditure" json:"DevelopmentExpenditure,omitempty"`
+	SubCompanyEquity          *float64 `protobuf:"fixed64,38,opt,name=SubCompanyEquity" json:"SubCompanyEquity,omitempty"`
+	CoBusinessEquity          *float64 `protobuf:"fixed64,39,opt,name=CoBusinessEquity" json:"CoBusinessEquity,omitempty"`
+	SuppCompEquity            *float64 `protobuf:"fixed64,40,opt,name=SuppCompEquity" json:"SuppCompEquity,omitempty"`
+	JointVenturesEquity       *float64 `protobuf:"fixed64,41,opt,name=JointVenturesEquity" json:"JointVenturesEquity,omitempty"`
+	FixedDepositNCA           *float64 `protobuf:"fixed64,42,opt,name=FixedDepositNCA" json:"FixedDepositNCA,omitempty"`
+	MortagageDepositNCA       *float64 `protobuf:"fixed64,43,opt,name=MortagageDepositNCA" json:"MortagageDepositNCA,omitempty"`
+	LTInvestments             *float64 `protobuf:"fixed64,44,opt,name=LTInvestments" json:"LTInvestments,omitempty"`
+	SecuInvestment            *float64 `protobuf:"fixed64,45,opt,name=SecuInvestment" json:"SecuInvestment,omitempty"`
+	FinAetAtFValTPLNCA        *float64 `protobuf:"fixed64,46,opt,name=FinAetAtFValTPLNCA" json:"FinAetAtFValTPLNCA,omitempty"`
+	DerFinInstsNCA            *float64 `protobuf:"fixed64,47,opt,name=DerFinInstsNCA" json:"DerFinInstsNCA,omitempty"`
+	HoldForSaleAssetsNCA      *float64 `protobuf:"fixed64,48,opt,name=HoldForSaleAssetsNCA" json:"HoldForSaleAssetsNCA,omitempty"`
+	OtherInvestment           *float64 `protobuf:"fixed64,49,opt,name=OtherInvestment" json:"OtherInvestment,omitempty"`
+	IntangibleAssets          *float64 `protobuf:"fixed64,50,opt,name=IntangibleAssets" json:"IntangibleAssets,omitempty"`
+	GoodWill                  *float64 `protobuf:"fixed64,51,opt,name=GoodWill" json:"GoodWill,omitempty"`
+	NegaGoodWill              *float64 `protobuf:"fixed64,52,opt,name=NegaGoodWill" json:"NegaGoodWill,omitempty"`
+	DeferredTaxAssets         *float64 `protobuf:"fixed64,53,opt,name=DeferredTaxAssets" json:"DeferredTaxAssets,omitempty"`
+	OtherNonCurrentAssets     *float64 `protobuf:"fixed64,54,opt,name=OtherNonCurrentAssets" json:"OtherNonCurrentAssets,omitempty"`
+	NCAExcepItems             *float64 `protobuf:"fixed64,55,opt,name=NCAExcepItems" json:"NCAExcepItems,omitempty"`
+	NCAAdjItems               *float64 `protobuf:"fixed64,56,opt,name=NCAAdjItems" json:"NCAAdjItems,omitempty"`
+	TotalNonCurrentAssets     *float64 `protobuf:"fixed64,57,opt,name=TotalNonCurrentAssets" json:"TotalNonCurrentAssets,omitempty"`
+	OtherAssets               *float64 `protobuf:"fixed64,58,opt,name=OtherAssets" json:"OtherAssets,omitempty"`
+	TotalAssets               *float64 `protobuf:"fixed64,59,opt,name=TotalAssets" json:"TotalAssets,omitempty"`
+	AccountsPayable           *float64 `protobuf:"fixed64,60,opt,name=AccountsPayable" json:"AccountsPayable,omitempty"`
+	NotesPayable              *float64 `protobuf:"fixed64,61,opt,name=NotesPayable" json:"NotesPayable,omitempty"`
+	TaxesPayable              *float64 `protobuf:"fixed64,62,opt,name=TaxesPayable" json:"TaxesPayable,omitempty"`
+	DividendPayable           *float64 `protobuf:"fixed64,63,opt,name=DividendPayable" json:"DividendPayable,omitempty"`
+	FAssociateFundRecCL       *float64 `protobuf:"fixed64,64,opt,name=FAssociateFundRecCL" json:"FAssociateFundRecCL,omitempty"`
+	OtherFeesPayable          *float64 `protobuf:"fixed64,65,opt,name=OtherFeesPayable" json:"OtherFeesPayable,omitempty"`
+	AdvanceReceipts           *float64 `protobuf:"fixed64,66,opt,name=AdvanceReceipts" json:"AdvanceReceipts,omitempty"`
+	CustomerDeposits          *float64 `protobuf:"fixed64,67,opt,name=CustomerDeposits" json:"CustomerDeposits,omitempty"`
+	ShortTermLoan             *float64 `protobuf:"fixed64,68,opt,name=ShortTermLoan" json:"ShortTermLoan,omitempty"`
+	BankLoansAndOverdraft     *float64 `protobuf:"fixed64,69,opt,name=BankLoansAndOverdraft" json:"BankLoansAndOverdraft,omitempty"`
+	FOtherLoanCL              *float64 `protobuf:"fixed64,70,opt,name=FOtherLoanCL" json:"FOtherLoanCL,omitempty"`
+	UnearnedPremiumReserve    *float64 `protobuf:"fixed64,71,opt,name=UnearnedPremiumReserve" json:"UnearnedPremiumReserve,omitempty"`
+	NotDecidedReservesCL      *float64 `protobuf:"fixed64,72,opt,name=NotDecidedReservesCL" json:"NotDecidedReservesCL,omitempty"`
+	NotMatuRiskReserves       *float64 `protobuf:"fixed64,73,opt,name=NotMatuRiskReserves" json:"NotMatuRiskReserves,omitempty"`
+	DerFinInstsCL             *float64 `protobuf:"fixed64,74,opt,name=DerFinInstsCL" json:"DerFinInstsCL,omitempty"`
+	InveContLiaCL             *float64 `protobuf:"fixed64,75,opt,name=InveContLiaCL" json:"InveContLiaCL,omitempty"`
+	BFinInstDepBorMoney       *float64 `protobuf:"fixed64,76,opt,name=BFinInstDepBorMoney" json:"BFinInstDepBorMoney,omitempty"`
+	LFromOthBanksCL           *float64 `protobuf:"fixed64,77,opt,name=LFromOthBanksCL" json:"LFromOthBanksCL,omitempty"`
+	SBbSecuProceeds           *float64 `protobuf:"fixed64,78,opt,name=SBbSecuProceeds" json:"SBbSecuProceeds,omitempty"`
+	FAccruedBadDebtCL         *float64 `protobuf:"fixed64,79,opt,name=FAccruedBadDebtCL" json:"FAccruedBadDebtCL,omitempty"`
+	FFinanceLeaseOwesCL       *float64 `protobuf:"fixed64,80,opt,name=FFinanceLeaseOwesCL" json:"FFinanceLeaseOwesCL,omitempty"`
+	DeferredProceedsCL        *float64 `protobuf:"fixed64,81,opt,name=DeferredProceedsCL" json:"DeferredProceedsCL,omitempty"`
+	OtherCurrentLiability     *float64 `protobuf:"fixed64,82,opt,name=OtherCurrentLiability" json:"OtherCurrentLiability,omitempty"`
+	CLExcepItems              *float64 `protobuf:"fixed64,83,opt,name=CLExcepItems" json:"CLExcepItems,omitempty"`
+	CLAdjItems                *float64 `protobuf:"fixed64,84,opt,name=CLAdjItems" json:"CLAdjItems,omitempty"`
+	TotalCurrentLiability     *float64 `protobuf:"fixed64,85,opt,name=TotalCurrentLiability" json:"TotalCurrentLiability,omitempty"`
+	NetCurrentLiability       *float64 `protobuf:"fixed64,86,opt,name=NetCurrentLiability" json:"NetCurrentLiability,omitempty"`
+	AssetLessCLiability       *float64 `protobuf:"fixed64,87,opt,name=AssetLessCLiability" json:"AssetLessCLiability,omitempty"`
+	LongtermLoan              *float64 `protobuf:"fixed64,88,opt,name=LongtermLoan" json:"LongtermLoan,omitempty"`
+	NFOtherLoanNCL            *float64 `protobuf:"fixed64,89,opt,name=NFOtherLoanNCL" json:"NFOtherLoanNCL,omitempty"`
+	LFromOthBanksNCL          *float64 `protobuf:"fixed64,90,opt,name=LFromOthBanksNCL" json:"LFromOthBanksNCL,omitempty"`
+	LTAccountPayable          *float64 `protobuf:"fixed64,91,opt,name=LTAccountPayable" json:"LTAccountPayable,omitempty"`
+	LongSalariesPay           *float64 `protobuf:"fixed64,92,opt,name=LongSalariesPay" json:"LongSalariesPay,omitempty"`
+	NFAssociateFundRecNCL     *float64 `protobuf:"fixed64,93,opt,name=NFAssociateFundRecNCL" json:"NFAssociateFundRecNCL,omitempty"`
+	NFFinanceLeaseOwesNCL     *float64 `protobuf:"fixed64,94,opt,name=NFFinanceLeaseOwesNCL" json:"NFFinanceLeaseOwesNCL,omitempty"`
+	DeferredTaxLiability      *float64 `protobuf:"fixed64,95,opt,name=DeferredTaxLiability" json:"DeferredTaxLiability,omitempty"`
+	NFDeferredProceedsNCL     *float64 `protobuf:"fixed64,96,opt,name=NFDeferredProceedsNCL" json:"NFDeferredProceedsNCL,omitempty"`
+	NFAccruedBadDebtNCL       *float64 `protobuf:"fixed64,97,opt,name=NFAccruedBadDebtNCL" json:"NFAccruedBadDebtNCL,omitempty"`
+	ConBillAndBond            *float64 `protobuf:"fixed64,98,opt,name=ConBillAndBond" json:"ConBillAndBond,omitempty"`
+	DebtInstruIssued          *float64 `protobuf:"fixed64,99,opt,name=DebtInstruIssued" json:"DebtInstruIssued,omitempty"`
+	DerFinInstsNCL            *float64 `protobuf:"fixed64,100,opt,name=DerFinInstsNCL" json:"DerFinInstsNCL,omitempty"`
+	RetBfitsResp              *float64 `protobuf:"fixed64,101,opt,name=RetBfitsResp" json:"RetBfitsResp,omitempty"`
+	NotDecidedReservesNCL     *float64 `protobuf:"fixed64,102,opt,name=NotDecidedReservesNCL" json:"NotDecidedReservesNCL,omitempty"`
+	InveContLiaNCL            *float64 `protobuf:"fixed64,103,opt,name=InveContLiaNCL" json:"InveContLiaNCL,omitempty"`
+	InsurAccPayableNCL        *float64 `protobuf:"fixed64,104,opt,name=InsurAccPayableNCL" json:"InsurAccPayableNCL,omitempty"`
+	OtherNonCurrentLiab       *float64 `protobuf:"fixed64,105,opt,name=OtherNonCurrentLiab" json:"OtherNonCurrentLiab,omitempty"`
+	NCLExcepItems             *float64 `protobuf:"fixed64,106,opt,name=NCLExcepItems" json:"NCLExcepItems,omitempty"`
+	NCLAdjItems               *float64 `protobuf:"fixed64,107,opt,name=NCLAdjItems" json:"NCLAdjItems,omitempty"`
+	TotalNonCurrentLiab       *float64 `protobuf:"fixed64,108,opt,name=TotalNonCurrentLiab" json:"TotalNonCurrentLiab,omitempty"`
+	OtherLiability            *float64 `protobuf:"fixed64,109,opt,name=OtherLiability" json:"OtherLiability,omitempty"`
+	TotalLiability            *float64 `protobuf:"fixed64,110,opt,name=TotalLiability" json:"TotalLiability,omitempty"`
+	AssetLessTLiability       *float64 `protobuf:"fixed64,111,opt,name=AssetLessTLiability" json:"AssetLessTLiability,omitempty"`
+	TotalIntANCTLiability     *float64 `protobuf:"fixed64,112,opt,name=TotalIntANCTLiability" json:"TotalIntANCTLiability,omitempty"`
+	ShareCapital              *float64 `protobuf:"fixed64,113,opt,name=ShareCapital" json:"ShareCapital,omitempty"`
+	OtherEquityinstruments    *float64 `protobuf:"fixed64,114,opt,name=OtherEquityinstruments" json:"OtherEquityinstruments,omitempty"`
+	Reserve                   *float64 `protobuf:"fixed64,115,opt,name=Reserve" json:"Reserve,omitempty"`
+	StockPremium              *float64 `protobuf:"fixed64,116,opt,name=StockPremium" json:"StockPremium,omitempty"`
+	ReserveFund               *float64 `protobuf:"fixed64,117,opt,name=ReserveFund" json:"ReserveFund,omitempty"`
+	CapitalReserveFund        *float64 `protobuf:"fixed64,118,opt,name=CapitalReserveFund" json:"CapitalReserveFund,omitempty"`
+	RevaluationReserve        *float64 `protobuf:"fixed64,119,opt,name=RevaluationReserve" json:"RevaluationReserve,omitempty"`
+	ExchangeReserve           *float64 `protobuf:"fixed64,120,opt,name=ExchangeReserve" json:"ExchangeReserve,omitempty"`
+	OtherReserve              *float64 `protobuf:"fixed64,121,opt,name=OtherReserve" json:"OtherReserve,omitempty"`
+	HoldProfit                *float64 `protobuf:"fixed64,122,opt,name=HoldProfit" json:"HoldProfit,omitempty"`
+	SimulantAllotDividend     *float64 `protobuf:"fixed64,123,opt,name=SimulantAllotDividend" json:"SimulantAllotDividend,omitempty"`
+	RetainedProfit            *float64 `protobuf:"fixed64,124,opt,name=RetainedProfit" json:"RetainedProfit,omitempty"`
+	SEExcepItems              *float64 `protobuf:"fixed64,125,opt,name=SEExcepItems" json:"SEExcepItems,omitempty"`
+	SEAdjItems                *float64 `protobuf:"fixed64,126,opt,name=SEAdjItems" json:"SEAdjItems,omitempty"`
+	ShareholderEquity         *float64 `protobuf:"fixed64,127,opt,name=ShareholderEquity" json:"ShareholderEquity,omitempty"`
+	MinorityInterests         *float64 `protobuf:"fixed64,128,opt,name=MinorityInterests" json:"MinorityInterests,omitempty"`
+	TotalInterests            *float64 `protobuf:"fixed64,129,opt,name=TotalInterests" json:"TotalInterests,omitempty"`
+	TotalIntATotalLiab        *float64 `protobuf:"fixed64,130,opt,name=TotalIntATotalLiab" json:"TotalIntATotalLiab,omitempty"`
+	XXX_NoUnkeyedLiteral      struct{} `json:"-"`
+	XXX_unrecognized          []byte   `json:"-"`
+	XXX_sizecache             int32    `json:"-"`
+}
+
+type balanceSheetHK struct {
+	balanceSheetDetails map[FinancialUniqueKey]*HK_BalanceSheetGEHK
+
+	assistCalculation
+}
+
+type HK_CashFlowStatementHK struct {
+	UniqueKey            *string  `protobuf:"bytes,120,opt,name=unique_key,json=uniqueKey" json:"unique_key,omitempty"`
+	F10FinancialYear     *uint32  `protobuf:"varint,121,opt,name=f10_financial_year,json=f10FinancialYear" json:"f10_financial_year,omitempty"`
+	F10FinancialType     *uint32  `protobuf:"varint,122,opt,name=f10_financial_type,json=f10FinancialType" json:"f10_financial_type,omitempty"`
+	Type                 *uint32  `protobuf:"varint,109,opt,name=type" json:"type,omitempty"`
+	EndDate              *uint32  `protobuf:"varint,110,opt,name=EndDate" json:"EndDate,omitempty"`
+	InfoSource           *string  `protobuf:"bytes,111,opt,name=InfoSource" json:"InfoSource,omitempty"`
+	CompanyType          *uint32  `protobuf:"varint,112,opt,name=CompanyType" json:"CompanyType,omitempty"`
+	CurrencyUnit         *string  `protobuf:"bytes,113,opt,name=CurrencyUnit" json:"CurrencyUnit,omitempty"`
+	CurrencyCode         *string  `protobuf:"bytes,119,opt,name=CurrencyCode" json:"CurrencyCode,omitempty"`
+	AccountingStandards  *string  `protobuf:"bytes,114,opt,name=AccountingStandards" json:"AccountingStandards,omitempty"`
+	PeriodMark           *uint32  `protobuf:"varint,115,opt,name=PeriodMark" json:"PeriodMark,omitempty"`
+	Mark                 *uint32  `protobuf:"varint,116,opt,name=Mark" json:"Mark,omitempty"`
+	InfoPublDate         *uint32  `protobuf:"varint,117,opt,name=InfoPublDate" json:"InfoPublDate,omitempty"`
+	FiscalYear           *uint32  `protobuf:"varint,118,opt,name=FiscalYear" json:"FiscalYear,omitempty"`
+	EarningBeforeTax     *float64 `protobuf:"fixed64,1,opt,name=EarningBeforeTax" json:"EarningBeforeTax,omitempty"`
+	InterestIncomeAD     *float64 `protobuf:"fixed64,2,opt,name=InterestIncomeAD" json:"InterestIncomeAD,omitempty"`
+	InterestExpAD        *float64 `protobuf:"fixed64,3,opt,name=InterestExpAD" json:"InterestExpAD,omitempty"`
+	DividendIncomeAD     *float64 `protobuf:"fixed64,4,opt,name=DividendIncomeAD" json:"DividendIncomeAD,omitempty"`
+	InvestProfAloss      *float64 `protobuf:"fixed64,5,opt,name=InvestProfAloss" json:"InvestProfAloss,omitempty"`
+	AffilCompProfAloss   *float64 `protobuf:"fixed64,6,opt,name=AffilCompProfAloss" json:"AffilCompProfAloss,omitempty"`
+	DevalAndAccBadDebt   *float64 `protobuf:"fixed64,7,opt,name=DevalAndAccBadDebt" json:"DevalAndAccBadDebt,omitempty"`
+	DevalofProPlEquip    *float64 `protobuf:"fixed64,8,opt,name=DevalofProPlEquip" json:"DevalofProPlEquip,omitempty"`
+	DevalofAvaForSaleInv *float64 `protobuf:"fixed64,9,opt,name=DevalofAvaForSaleInv" json:"DevalofAvaForSaleInv,omitempty"`
+	DevalofInventories   *float64 `protobuf:"fixed64,10,opt,name=DevalofInventories" json:"DevalofInventories,omitempty"`
+	DevalofTradeRece     *float64 `protobuf:"fixed64,11,opt,name=DevalofTradeRece" json:"DevalofTradeRece,omitempty"`
+	DevalofGoodwill      *float64 `protobuf:"fixed64,12,opt,name=DevalofGoodwill" json:"DevalofGoodwill,omitempty"`
+	DevalofOthers        *float64 `protobuf:"fixed64,13,opt,name=DevalofOthers" json:"DevalofOthers,omitempty"`
+	RevaluationSurplus   *float64 `protobuf:"fixed64,14,opt,name=RevaluationSurplus" json:"RevaluationSurplus,omitempty"`
+	CInFVofInvPropert    *float64 `protobuf:"fixed64,15,opt,name=CInFVofInvPropert" json:"CInFVofInvPropert,omitempty"`
+	CInFVofDerFinInst    *float64 `protobuf:"fixed64,16,opt,name=CInFVofDerFinInst" json:"CInFVofDerFinInst,omitempty"`
+	CInFVofOtherAssets   *float64 `protobuf:"fixed64,17,opt,name=CInFVofOtherAssets" json:"CInFVofOtherAssets,omitempty"`
+	ProfitDispOfAssets   *float64 `protobuf:"fixed64,18,opt,name=ProfitDispOfAssets" json:"ProfitDispOfAssets,omitempty"`
+	ProfDispOfAFSaleInv  *float64 `protobuf:"fixed64,19,opt,name=ProfDispOfAFSaleInv" json:"ProfDispOfAFSaleInv,omitempty"`
+	ProfDispOfAffCEqu    *float64 `protobuf:"fixed64,20,opt,name=ProfDispOfAffCEqu" json:"ProfDispOfAffCEqu,omitempty"`
+	ProfDispOfProPlEquip *float64 `protobuf:"fixed64,21,opt,name=ProfDispOfProPlEquip" json:"ProfDispOfProPlEquip,omitempty"`
+	ProfDispOfOthAssets  *float64 `protobuf:"fixed64,22,opt,name=ProfDispOfOthAssets" json:"ProfDispOfOthAssets,omitempty"`
+	DepDividerSale       *float64 `protobuf:"fixed64,23,opt,name=DepDividerSale" json:"DepDividerSale,omitempty"`
+	Depreciation         *float64 `protobuf:"fixed64,24,opt,name=Depreciation" json:"Depreciation,omitempty"`
+	IntangibleAssetAmort *float64 `protobuf:"fixed64,25,opt,name=IntangibleAssetAmort" json:"IntangibleAssetAmort,omitempty"`
+	OtherDepDividerSale  *float64 `protobuf:"fixed64,26,opt,name=OtherDepDividerSale" json:"OtherDepDividerSale,omitempty"`
+	FinancialExpense     *float64 `protobuf:"fixed64,27,opt,name=FinancialExpense" json:"FinancialExpense,omitempty"`
+	ExchangeIncome       *float64 `protobuf:"fixed64,28,opt,name=ExchangeIncome" json:"ExchangeIncome,omitempty"`
+	UnrealExchangeIncome *float64 `protobuf:"fixed64,29,opt,name=UnrealExchangeIncome" json:"UnrealExchangeIncome,omitempty"`
+	SpeItemsManageAdj    *float64 `protobuf:"fixed64,30,opt,name=SpeItemsManageAdj" json:"SpeItemsManageAdj,omitempty"`
+	AdjItemsManageAdj    *float64 `protobuf:"fixed64,31,opt,name=AdjItemsManageAdj" json:"AdjItemsManageAdj,omitempty"`
+	OpeProBefChgInOpeCap *float64 `protobuf:"fixed64,32,opt,name=OpeProBefChgInOpeCap" json:"OpeProBefChgInOpeCap,omitempty"`
+	InventoryChange      *float64 `protobuf:"fixed64,33,opt,name=InventoryChange" json:"InventoryChange,omitempty"`
+	ProUnderDevelChange  *float64 `protobuf:"fixed64,34,opt,name=ProUnderDevelChange" json:"ProUnderDevelChange,omitempty"`
+	AccReceivChange      *float64 `protobuf:"fixed64,35,opt,name=AccReceivChange" json:"AccReceivChange,omitempty"`
+	AccPayableChange     *float64 `protobuf:"fixed64,36,opt,name=AccPayableChange" json:"AccPayableChange,omitempty"`
+	AdvReceiptsChange    *float64 `protobuf:"fixed64,37,opt,name=AdvReceiptsChange" json:"AdvReceiptsChange,omitempty"`
+	AdvPaymentChange     *float64 `protobuf:"fixed64,38,opt,name=AdvPaymentChange" json:"AdvPaymentChange,omitempty"`
+	FAAFValOnPLChange    *float64 `protobuf:"fixed64,39,opt,name=FAAFValOnPLChange" json:"FAAFValOnPLChange,omitempty"`
+	FLAFValOnPLChange    *float64 `protobuf:"fixed64,40,opt,name=FLAFValOnPLChange" json:"FLAFValOnPLChange,omitempty"`
+	DerFinInstChange     *float64 `protobuf:"fixed64,41,opt,name=DerFinInstChange" json:"DerFinInstChange,omitempty"`
+	InsuReceivChange     *float64 `protobuf:"fixed64,42,opt,name=InsuReceivChange" json:"InsuReceivChange,omitempty"`
+	InsuContLiabChange   *float64 `protobuf:"fixed64,43,opt,name=InsuContLiabChange" json:"InsuContLiabChange,omitempty"`
+	AccRePayableChange   *float64 `protobuf:"fixed64,44,opt,name=AccRePayableChange" json:"AccRePayableChange,omitempty"`
+	BBackSFAssetsChange  *float64 `protobuf:"fixed64,45,opt,name=BBackSFAssetsChange" json:"BBackSFAssetsChange,omitempty"`
+	SpeItemsWCapChange   *float64 `protobuf:"fixed64,46,opt,name=SpeItemsWCapChange" json:"SpeItemsWCapChange,omitempty"`
+	AdjItemsWCapChange   *float64 `protobuf:"fixed64,47,opt,name=AdjItemsWCapChange" json:"AdjItemsWCapChange,omitempty"`
+	BankDepositChange    *float64 `protobuf:"fixed64,48,opt,name=BankDepositChange" json:"BankDepositChange,omitempty"`
+	LoansAAdvanChange    *float64 `protobuf:"fixed64,49,opt,name=LoansAAdvanChange" json:"LoansAAdvanChange,omitempty"`
+	BFAAFValOnPLChange   *float64 `protobuf:"fixed64,50,opt,name=BFAAFValOnPLChange" json:"BFAAFValOnPLChange,omitempty"`
+	SpeItemsOpeAchange   *float64 `protobuf:"fixed64,51,opt,name=SpeItemsOpeAchange" json:"SpeItemsOpeAchange,omitempty"`
+	BorFromCBChange      *float64 `protobuf:"fixed64,52,opt,name=BorFromCBChange" json:"BorFromCBChange,omitempty"`
+	CusDepositsChange    *float64 `protobuf:"fixed64,53,opt,name=CusDepositsChange" json:"CusDepositsChange,omitempty"`
+	BFLAFValOnPLChange   *float64 `protobuf:"fixed64,54,opt,name=BFLAFValOnPLChange" json:"BFLAFValOnPLChange,omitempty"`
+	SpeItemsOpeLchange   *float64 `protobuf:"fixed64,55,opt,name=SpeItemsOpeLchange" json:"SpeItemsOpeLchange,omitempty"`
+	CashReceiptsFOpe     *float64 `protobuf:"fixed64,56,opt,name=CashReceiptsFOpe" json:"CashReceiptsFOpe,omitempty"`
+	HKProfitsTaxPaid     *float64 `protobuf:"fixed64,57,opt,name=HKProfitsTaxPaid" json:"HKProfitsTaxPaid,omitempty"`
+	ChinaIncomeTaxPaid   *float64 `protobuf:"fixed64,58,opt,name=ChinaIncomeTaxPaid" json:"ChinaIncomeTaxPaid,omitempty"`
+	OtherTaxes           *float64 `protobuf:"fixed64,59,opt,name=OtherTaxes" json:"OtherTaxes,omitempty"`
+	DividendsRecBO       *float64 `protobuf:"fixed64,60,opt,name=DividendsRecBO" json:"DividendsRecBO,omitempty"`
+	DividendPaidBO       *float64 `protobuf:"fixed64,61,opt,name=DividendPaidBO" json:"DividendPaidBO,omitempty"`
+	InterestRecBO        *float64 `protobuf:"fixed64,62,opt,name=InterestRecBO" json:"InterestRecBO,omitempty"`
+	InterestPaidBO       *float64 `protobuf:"fixed64,63,opt,name=InterestPaidBO" json:"InterestPaidBO,omitempty"`
+	SpeItemsOpeBusi      *float64 `protobuf:"fixed64,64,opt,name=SpeItemsOpeBusi" json:"SpeItemsOpeBusi,omitempty"`
+	AdjItemsOpeBusi      *float64 `protobuf:"fixed64,65,opt,name=AdjItemsOpeBusi" json:"AdjItemsOpeBusi,omitempty"`
+	NetOpeCFlow          *float64 `protobuf:"fixed64,66,opt,name=NetOpeCFlow" json:"NetOpeCFlow,omitempty"`
+	FinanceAndSpeItems   *float64 `protobuf:"fixed64,67,opt,name=FinanceAndSpeItems" json:"FinanceAndSpeItems,omitempty"`
+	InterestRecIB        *float64 `protobuf:"fixed64,68,opt,name=InterestRecIB" json:"InterestRecIB,omitempty"`
+	DividendsRecIB       *float64 `protobuf:"fixed64,69,opt,name=DividendsRecIB" json:"DividendsRecIB,omitempty"`
+	RestrictCashChange   *float64 `protobuf:"fixed64,70,opt,name=RestrictCashChange" json:"RestrictCashChange,omitempty"`
+	LoanReceivableChange *float64 `protobuf:"fixed64,71,opt,name=LoanReceivableChange" json:"LoanReceivableChange,omitempty"`
+	DepositChange        *float64 `protobuf:"fixed64,72,opt,name=DepositChange" json:"DepositChange,omitempty"`
+	VendCapitalAssents   *float64 `protobuf:"fixed64,73,opt,name=VendCapitalAssents" json:"VendCapitalAssents,omitempty"`
+	PurCapitalAssents    *float64 `protobuf:"fixed64,74,opt,name=PurCapitalAssents" json:"PurCapitalAssents,omitempty"`
+	VendIntassets        *float64 `protobuf:"fixed64,75,opt,name=VendIntassets" json:"VendIntassets,omitempty"`
+	PurIntassets         *float64 `protobuf:"fixed64,76,opt,name=PurIntassets" json:"PurIntassets,omitempty"`
+	VendAffCompanies     *float64 `protobuf:"fixed64,77,opt,name=VendAffCompanies" json:"VendAffCompanies,omitempty"`
+	PurAffCompanies      *float64 `protobuf:"fixed64,78,opt,name=PurAffCompanies" json:"PurAffCompanies,omitempty"`
+	DisinvestmentCash    *float64 `protobuf:"fixed64,79,opt,name=DisinvestmentCash" json:"DisinvestmentCash,omitempty"`
+	InvestPaymentCash    *float64 `protobuf:"fixed64,80,opt,name=InvestPaymentCash" json:"InvestPaymentCash,omitempty"`
+	InvestAdjustedOther  *float64 `protobuf:"fixed64,81,opt,name=InvestAdjustedOther" json:"InvestAdjustedOther,omitempty"`
+	InvestAdjustedItems  *float64 `protobuf:"fixed64,82,opt,name=InvestAdjustedItems" json:"InvestAdjustedItems,omitempty"`
+	NetInvbusiCFlow      *float64 `protobuf:"fixed64,83,opt,name=NetInvbusiCFlow" json:"NetInvbusiCFlow,omitempty"`
+	CashAndOtherBefFin   *float64 `protobuf:"fixed64,84,opt,name=CashAndOtherBefFin" json:"CashAndOtherBefFin,omitempty"`
+	NetCashBeforFinance  *float64 `protobuf:"fixed64,85,opt,name=NetCashBeforFinance" json:"NetCashBeforFinance,omitempty"`
+	NewLoan              *float64 `protobuf:"fixed64,86,opt,name=NewLoan" json:"NewLoan,omitempty"`
+	Refund               *float64 `protobuf:"fixed64,87,opt,name=Refund" json:"Refund,omitempty"`
+	IssueShares          *float64 `protobuf:"fixed64,88,opt,name=IssueShares" json:"IssueShares,omitempty"`
+	IssueBonds           *float64 `protobuf:"fixed64,89,opt,name=IssueBonds" json:"IssueBonds,omitempty"`
+	InterestPaidFB       *float64 `protobuf:"fixed64,90,opt,name=InterestPaidFB" json:"InterestPaidFB,omitempty"`
+	DividendPaidFB       *float64 `protobuf:"fixed64,91,opt,name=DividendPaidFB" json:"DividendPaidFB,omitempty"`
+	AbsorbInvestIncome   *float64 `protobuf:"fixed64,92,opt,name=AbsorbInvestIncome" json:"AbsorbInvestIncome,omitempty"`
+	IssExpAPayOfRedSecu  *float64 `protobuf:"fixed64,93,opt,name=IssExpAPayOfRedSecu" json:"IssExpAPayOfRedSecu,omitempty"`
+	PledgedDepositChange *float64 `protobuf:"fixed64,94,opt,name=PledgedDepositChange" json:"PledgedDepositChange,omitempty"`
+	FinanceAdjustedOther *float64 `protobuf:"fixed64,95,opt,name=FinanceAdjustedOther" json:"FinanceAdjustedOther,omitempty"`
+	FinanceAdjustedItems *float64 `protobuf:"fixed64,96,opt,name=FinanceAdjustedItems" json:"FinanceAdjustedItems,omitempty"`
+	NetCashFromFinance   *float64 `protobuf:"fixed64,97,opt,name=NetCashFromFinance" json:"NetCashFromFinance,omitempty"`
+	EffectOfRate         *float64 `protobuf:"fixed64,98,opt,name=EffectOfRate" json:"EffectOfRate,omitempty"`
+	OtherItemsAffectNC   *float64 `protobuf:"fixed64,99,opt,name=OtherItemsAffectNC" json:"OtherItemsAffectNC,omitempty"`
+	NetCash              *float64 `protobuf:"fixed64,100,opt,name=NetCash" json:"NetCash,omitempty"`
+	BeginPeriodCash      *float64 `protobuf:"fixed64,101,opt,name=BeginPeriodCash" json:"BeginPeriodCash,omitempty"`
+	ItemsPeriod          *float64 `protobuf:"fixed64,102,opt,name=ItemsPeriod" json:"ItemsPeriod,omitempty"`
+	CashEndPer           *float64 `protobuf:"fixed64,103,opt,name=CashEndPer" json:"CashEndPer,omitempty"`
+	CashABankBalances    *float64 `protobuf:"fixed64,104,opt,name=CashABankBalances" json:"CashABankBalances,omitempty"`
+	BankDeposits         *float64 `protobuf:"fixed64,105,opt,name=BankDeposits" json:"BankDeposits,omitempty"`
+	InterestRecCB        *float64 `protobuf:"fixed64,106,opt,name=InterestRecCB" json:"InterestRecCB,omitempty"`
+	InterestPaidCB       *float64 `protobuf:"fixed64,107,opt,name=InterestPaidCB" json:"InterestPaidCB,omitempty"`
+	CashCashEquival      *float64 `protobuf:"fixed64,108,opt,name=CashCashEquival" json:"CashCashEquival,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+type cashFlowHK struct {
+	cashFlowDetails map[FinancialUniqueKey]*HK_CashFlowStatementHK
+
+	assistCalculation
+}
+
+type HK_BuyBackitems struct {
+	PublDate             *uint64  `protobuf:"varint,1,opt,name=publ_date,json=publDate" json:"publ_date,omitempty"`
+	EndDate              *uint64  `protobuf:"varint,2,opt,name=EndDate" json:"EndDate,omitempty"`
+	BuybackMoney         *float64 `protobuf:"fixed64,3,opt,name=buyback_money,json=buybackMoney" json:"buyback_money,omitempty"`
+	BuybackSum           *int64   `protobuf:"varint,4,opt,name=buyback_sum,json=buybackSum" json:"buyback_sum,omitempty"`
+	Percentage           *float64 `protobuf:"fixed64,5,opt,name=percentage" json:"percentage,omitempty"`
+	HighPrice            *float64 `protobuf:"fixed64,6,opt,name=high_price,json=highPrice" json:"high_price,omitempty"`
+	LowPrice             *float64 `protobuf:"fixed64,7,opt,name=low_price,json=lowPrice" json:"low_price,omitempty"`
+	CumulativeSum        *int64   `protobuf:"varint,8,opt,name=cumulative_sum,json=cumulativeSum" json:"cumulative_sum,omitempty"`
+	CumulativeSumToTS    *float64 `protobuf:"fixed64,9,opt,name=cumulative_sumToTS,json=cumulativeSumToTS" json:"cumulative_sumToTS,omitempty"`
+	BuybackMoneyCode     *string  `protobuf:"bytes,10,opt,name=BuybackMoneyCode" json:"BuybackMoneyCode,omitempty"`
+	ShareType            *string  `protobuf:"bytes,11,opt,name=share_type,json=shareType" json:"share_type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+type buybackHK struct {
+	buybackDetails []*HK_BuyBackitems
+}
+
+type NoUnkeyedLiterals struct{}
+
+type IndicatorResult struct {
+	_ NoUnkeyedLiterals
+
+	IsInvalid bool               // 标识指标计算结果无效
+	Source    byte               // 指标的数据来源(f10, 运营后台，爬虫)
+	Key       FinancialUniqueKey // 指标的唯一key(由财年和财报类型决定)
+	Value     float64            // 指标对应的取值
+	YoY       float64            // 同比
+	MoM       float64            // 环比
+	EndDate   int64              // 当期财报统计截止日时间戳
+}
+
+// IndicatorResults 特定指标所有财务周期的计算数据
+type IndicatorResults map[FinancialUniqueKey]IndicatorResult
+
+// AllIndicatorResults 各指标所有财务周期的计算数据
+type AllIndicatorResults map[int]IndicatorResults
+
+type operationAndCrawlerHK struct {
+	operationDetails AllIndicatorResults // 运营方式的财务指标数据
+	crawlerDetails   AllIndicatorResults // 爬虫获取的财务指标
 }
