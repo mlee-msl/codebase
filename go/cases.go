@@ -1842,7 +1842,7 @@ func (d testMM) String() string {
 }
 
 func (d testMM) add1(key1 int, key2 string, value []int) testMM {
-	if len(d) == 0 {
+	if d == nil {
 		d = make(testMM)
 	}
 	if _, has := d[key1]; !has {
@@ -1864,7 +1864,7 @@ func testMMAdd1() {
 }
 
 func (d testMM) add2(key1 int, key2 string, value []int) {
-	if len(d) == 0 {
+	if d == nil {
 		d = make(testMM)
 	}
 	if _, has := d[key1]; !has {
@@ -1874,7 +1874,7 @@ func (d testMM) add2(key1 int, key2 string, value []int) {
 }
 
 func testMMAdd2() {
-	d := new(testMM)
+	d := new(testMM) // 解引用后，会再拷贝给接收器临时对象
 	d.add2(1, "a", []int{1, 2})
 	d.add2(2, "a", []int{3, 4})
 	d.add2(1, "b", []int{5, 6})
@@ -1885,7 +1885,7 @@ func testMMAdd2() {
 }
 
 func testMMAdd2_() {
-	var d testMM
+	var d testMM // 会拷贝给接收器临时对象
 	d.add2(1, "a", []int{1, 2})
 	d.add2(2, "a", []int{3, 4})
 	d.add2(1, "b", []int{5, 6})
@@ -1899,7 +1899,7 @@ func (d *testMM) add3(key1 int, key2 string, value []int) {
 	if d == nil {
 		d = new(testMM)
 	}
-	if len(*d) == 0 {
+	if *d == nil {
 		*d = make(testMM)
 	}
 
@@ -1936,7 +1936,7 @@ func (d *testMM) add4(key1 int, key2 string, value []int) *testMM {
 		d = new(testMM)
 
 	}
-	if len(*d) == 0 {
+	if *d == nil {
 		*d = make(testMM)
 	}
 	if _, has := (*d)[key1]; !has {
@@ -1969,6 +1969,22 @@ func testMMAdd4_() {
 }
 
 func testMMAdd() {
+	var d testMM
+	if d == nil {
+		fmt.Println("nil nil")
+	} else {
+		fmt.Println("non-nil")
+	}
+	if d_ := new(testMM); d_ == nil {
+		fmt.Println("nil nil nil")
+	} else {
+		fmt.Println("non-nil non-nil")
+	}
+	if d_ := new(testMM); *d_ == nil {
+		fmt.Println("nil nil nil nil")
+	} else {
+		fmt.Println("non-nil non-nil non-nil")
+	}
 	testMMAdd1()
 	testMMAdd2()
 	testMMAdd2_()
@@ -1976,4 +1992,16 @@ func testMMAdd() {
 	testMMAdd3_()
 	testMMAdd4()
 	testMMAdd4_()
+}
+
+
+func testMapInit() {
+	f := func(m map[int]int) {
+		fmt.Println(m == nil, len(m)) // map类型没有cap函数
+	}
+	var m0 map[int]int
+	f(m0) // case 0
+	f(make(map[int]int)) // case 2
+	f(make(map[int]int, 2)) // case 3
+	// 如何区分出 case2 和 case3
 }

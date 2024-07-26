@@ -67,5 +67,6 @@ func main() {
 	// testStringFunc()
 	// testDeferOrder()
 	// testWaitGroup()
-	testMMAdd()
+	// testMMAdd()
+	testMapInit()
 }
