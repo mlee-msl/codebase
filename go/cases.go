@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 	"unsafe"
 
 	"github.com/axgle/mahonia"
@@ -61,6 +63,56 @@ func testMap() {
 
 	var m1 map[uint8]map[uint32]map[byte]string
 	fmt.Printf("取nil map: <%v>\n", m1[1][12][122])
+}
+
+func TestBoolean() {
+	a := 12
+	if !(a <= 9 && 0 <= a || a == 12 || a == 100 || a == -100) {
+		fmt.Println("bad1")
+		return
+	}
+	fmt.Println("good1")
+
+	if !((a <= 9 && 0 <= a) || a == 12 || a == 100 || a == -100) {
+		fmt.Println("bad2")
+		return
+	}
+	fmt.Println("good2")
+}
+
+type iface1 interface {
+	free()
+}
+
+func testIface() {
+	f := iface1(nil)
+	f.free()
+}
+func testStr() {
+	name := "mlee 富途"
+	fmt.Println(len(name)) // 11个字节
+	for i := 0; i < len(name); i++ {
+		fmt.Printf("%v, %T, %T\n", string(name[i]), name[i], 'm')
+		// if name[i] == 'e' {
+		// 	fmt.Println("aaaa: ", name[i])
+		// }
+	}
+	fmt.Println("-------------")
+	for _, c := range name {
+		fmt.Println(c, string(c))
+	}
+	s := "世界你好"
+	r, size := utf8.DecodeRuneInString(s)
+	fmt.Println(string(r), size)
+}
+
+func TestSli() {
+	tags := map[string]int{"mlee1": 12, "mlee2": 1222}
+	sli := make([]int, len(tags))
+	for _, tag := range tags {
+		sli = append(sli, tag)
+	}
+	fmt.Println(len(sli), cap(sli), sli)
 }
 
 func testSlice1() {
@@ -126,6 +178,7 @@ func testSlice3() {
 	f1(a)
 	fmt.Println(a, len(a))
 	fmt.Println(a[:cap(a)], a[:])
+	fmt.Print()
 }
 
 var _ = func() {
@@ -139,6 +192,8 @@ var _ = func() {
 	var _ sync.Mutex
 	var _ sync.Pool
 	var _ sync.RWMutex
+	var _ strings.Builder
+	var _ time.Timer
 	_ = time.After(5 * time.Second)
 }
 
@@ -1039,6 +1094,8 @@ func TestObjSize() {
 	fmt.Println(unsafe.Sizeof(s2))
 }
 
+const gNums = 200
+
 func TestSyncPool() {
 	p := sync.Pool{
 		New: func() any {
@@ -1050,7 +1107,7 @@ func TestSyncPool() {
 		counter atomic.Int32
 		wg      sync.WaitGroup
 	)
-	for i := 1; i <= 100; i++ {
+	for i := 1; i <= gNums; i++ {
 		wg.Add(1)
 		go func() {
 			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
@@ -1062,9 +1119,9 @@ func TestSyncPool() {
 				// fmt.Println("111", a_.s)
 				p.Put(a_)
 			}()
-			
+
 			// if a_.s == "mlee" {
-				_ = counter.Add(1)
+			_ = counter.Add(1)
 			// 	fmt.Printf("<%+v>\n", a_.s)
 			// }
 			a_.s = "mlee"
@@ -1086,7 +1143,7 @@ func TestSyncPool2() {
 		counter atomic.Int32
 		wg      sync.WaitGroup
 	)
-	for i := 1; i <= 100; i++ {
+	for i := 1; i <= gNums; i++ {
 		wg.Add(1)
 		go func() {
 			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
@@ -1096,11 +1153,14 @@ func TestSyncPool2() {
 			a_ := p.Get().(*f10HandlerHK)
 			defer func() {
 				// fmt.Println("111", a_.s)
+				a_.f10FinanceIndicatorHK = f10FinanceIndicatorHK{}
+				a_.renderDependency = renderDependency{}
+				a_.s = ""
 				p.Put(a_)
 			}()
-			
+
 			// if a_.s == "mlee" {
-				_ = counter.Add(1)
+			_ = counter.Add(1)
 			// 	fmt.Printf("<%+v>\n", a_.s)
 			// }
 			a_.s = "mlee"
@@ -1111,6 +1171,108 @@ func TestSyncPool2() {
 	// fmt.Println("end", counter.Load())
 }
 
+func TestSyncPool3() {
+	// p := sync.Pool{
+	// 	New: func() any {
+	// 		return new(f10HandlerHK)
+	// 	},
+	// }
+
+	p := sync.Pool{
+		New: func() any {
+			return &f10HandlerHK{
+				f10FinanceIndicatorHK: f10FinanceIndicatorHK{
+					mainIndexHK:    mainIndexHK{mainIndexDetails: make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)},
+					balanceSheetHK: balanceSheetHK{balanceSheetDetails: make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)},
+				},
+			}
+		},
+	}
+
+	var (
+		counter atomic.Int32
+		wg      sync.WaitGroup
+	)
+	for i := 1; i <= gNums; i++ {
+		wg.Add(1)
+		go func() {
+			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
+			defer func() {
+				wg.Done()
+			}()
+			a_ := p.Get().(*f10HandlerHK)
+			defer func() {
+				// fmt.Println("111", a_.s)
+				// a_.f10FinanceIndicatorHK = f10FinanceIndicatorHK{}
+				// a_.renderDependency = renderDependency{}
+				a_.mainIndexDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+				a_.balanceSheetDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+				a_.s = ""
+				p.Put(a_)
+			}()
+			a_.mainIndexDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.mainIndexDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["3"] = new(HK_BalanceSheetGEHK)
+			// if a_.s == "mlee" {
+			_ = counter.Add(1)
+			// 	fmt.Printf("<%+v>\n", a_.s)
+			// }
+			a_.s = "mlee"
+			// fmt.Println(a_.s)
+		}()
+	}
+	wg.Wait()
+	// fmt.Println("end", counter.Load())
+}
+
+func TestSyncPool4() {
+	p := sync.Pool{
+		New: func() any {
+			return new(f10HandlerHK)
+		},
+	}
+
+	var (
+		counter atomic.Int32
+		wg      sync.WaitGroup
+	)
+	for i := 1; i <= gNums; i++ {
+		wg.Add(1)
+		go func() {
+			time.Sleep(time.Duration(rand.Intn(3)+1) * time.Millisecond)
+			defer func() {
+				wg.Done()
+			}()
+			a_ := p.Get().(*f10HandlerHK)
+			defer func() {
+				// fmt.Println("111", a_.s)
+				a_.f10FinanceIndicatorHK = f10FinanceIndicatorHK{}
+				a_.renderDependency = renderDependency{}
+				a_.s = ""
+				p.Put(a_)
+			}()
+			a_.mainIndexDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+			a_.balanceSheetDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+			a_.mainIndexDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.mainIndexDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["3"] = new(HK_BalanceSheetGEHK)
+			// if a_.s == "mlee" {
+			_ = counter.Add(1)
+			// 	fmt.Printf("<%+v>\n", a_.s)
+			// }
+			a_.s = "mlee"
+			// fmt.Println(a_.s)
+		}()
+	}
+	wg.Wait()
+	// fmt.Println("end", counter.Load())
+	fmt.Print()
+}
+
 func TestNonPool() {
 	var (
 		counter atomic.Int32
@@ -1118,12 +1280,19 @@ func TestNonPool() {
 	)
 	for i := 1; i <= 100; i++ {
 		wg.Add(1)
-		go func(){
+		go func() {
 			time.Sleep(time.Duration(rand.Intn(4)+1) * time.Millisecond)
 			defer func() {
 				wg.Done()
 			}()
-			a_ := f10HandlerHK{}
+			a_ := new(f10HandlerHK)
+			a_.mainIndexDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+			a_.balanceSheetDetails = make(map[FinancialUniqueKey]*HK_BalanceSheetGEHK, 20)
+			a_.mainIndexDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.mainIndexDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["1"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["2"] = new(HK_BalanceSheetGEHK)
+			a_.balanceSheetDetails["3"] = new(HK_BalanceSheetGEHK)
 			_ = counter.Add(1)
 			a_.s = "mlee"
 			// fmt.Println(a_.s)
@@ -1535,4 +1704,276 @@ type AllIndicatorResults map[int]IndicatorResults
 type operationAndCrawlerHK struct {
 	operationDetails AllIndicatorResults // 运营方式的财务指标数据
 	crawlerDetails   AllIndicatorResults // 爬虫获取的财务指标
+}
+
+var buffers = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
+
+func GetBuffer() *bytes.Buffer {
+	return buffers.Get().(*bytes.Buffer)
+}
+
+func PutBuffer(buf *bytes.Buffer) {
+	buf.Reset() // 这里存在问题，因为底层切片的len为0了，但是cap可能还很大(https://github.com/CodeFish-xiao/go_concurrent_notes/blob/master/1.%E5%9F%BA%E6%9C%AC%E5%B9%B6%E5%8F%91%E5%8E%9F%E8%AF%AD/1.10%EF%BC%9APool%EF%BC%9A%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%E5%A4%A7%E6%9D%80%E5%99%A8/10.00-Pool%EF%BC%9A%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%E5%A4%A7%E6%9D%80%E5%99%A8.md)
+	buffers.Put(buf)
+
+	fmt.Print() // buf.Reset()
+}
+
+// DiffSli 实现集合的差集
+func DiffSli(sli1, sli2 []FinancialUniqueKey) []FinancialUniqueKey {
+	var (
+		diff    = make([]FinancialUniqueKey, 0, len(sli1))
+		sli1Map = make(map[FinancialUniqueKey][0]struct{}, len(sli1))
+		sli2Map = make(map[FinancialUniqueKey][0]struct{}, len(sli2))
+	)
+	for _, ele := range sli1 { // 对`sli1`去重
+		sli1Map[ele] = [0]struct{}{}
+	}
+	for _, ele := range sli2 {
+		sli2Map[ele] = [0]struct{}{}
+	}
+	for ele := range sli1Map {
+		if _, has := sli2Map[ele]; !has {
+			diff = append(diff, ele)
+		}
+	}
+	return diff
+}
+
+func TestDiff() {
+	r := DiffSli(append([]FinancialUniqueKey{"mlee1", "mlee2", "mlee2", "mlee3", "mlee1"}, []FinancialUniqueKey{"mlee1000", "mlee121", "mlee3", "mlee2", "mlee2"}...), nil)
+	fmt.Println(r)
+}
+
+func fff() {
+	var sli = make([]int, 0, 10)
+	f := func(a []int) {
+		sli = append(sli, a...)
+	}
+	f([]int{1, 2, 3})
+	f([]int{1, 20, 30})
+	fmt.Println(sli)
+}
+
+func testSize() {
+	type a struct {
+		f1 string
+		f2 int32
+		f3 []int32
+	}
+	runtime.NumCPU()
+	fmt.Println(unsafe.Sizeof(a{}), unsafe.Sizeof(new(a)), unsafe.Sizeof(new(string)), unsafe.Sizeof(new([]int)))
+	v1 := "aaa"
+	v1_ := strings.Repeat("a", 100)
+	v2 := []int{}
+	v3 := new(string)
+	v4 := []int{1, 2}
+
+	fmt.Println(unsafe.Sizeof(v1), unsafe.Sizeof(v1_), unsafe.Sizeof(v2), unsafe.Sizeof(*v3), unsafe.Sizeof(v4))
+}
+
+func getAllMonthLastDay(year int) {
+	for _, month := range []time.Month{
+		time.January, time.February, time.March,
+		time.April, time.May, time.June,
+		time.July, time.August, time.September,
+		time.October, time.November, time.December,
+	} {
+		t := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC) // 计算下一个月的第0天，即本月的最后一天
+		fmt.Println(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	}
+}
+
+// func EqualSli(sli1, sli2 []int){
+// 	slices.Compare[]()
+// 	if reflect.DeepEqual(sli1, sli2) {
+// 		fmt.Println("equal")
+// 	} else {
+// 		fmt.Println("not equal")
+// 	}
+// }
+
+func testStringFunc() {
+	ss1 := strings.Split("_", "_")
+	fmt.Println(len(ss1), ss1, len(ss1[0]), len(ss1[1]))
+	ss2 := strings.Split("a_", "_")
+	fmt.Println(len(ss2), ss2, len(ss2[0]), len(ss2[1]))
+	ss3 := strings.Split("_b", "_")
+	fmt.Println(len(ss3), ss3, len(ss3[0]), len(ss3[1]))
+	ss4 := strings.Split("aa_bb", "_")
+	fmt.Println(len(ss4), ss4, len(ss4[0]), len(ss4[1]))
+}
+
+func testDeferOrder() {
+	defer fmt.Println("defer first")
+	defer fmt.Println("defer second")
+	fmt.Println("third")
+}
+
+func testWaitGroup() {
+	fmt.Println("begin")
+	a := []int{}
+	var wg sync.WaitGroup
+	for range a {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			fmt.Println("----")
+		}()
+	}
+	wg.Wait()
+	fmt.Println("end")
+}
+
+type testMM map[int]map[string][]int
+
+func (d testMM) String() string {
+	var b strings.Builder
+	for key1, m1 := range d {
+		for key2, value := range m1 {
+			b.WriteString(fmt.Sprintln(key1, key2, value))
+		}
+	}
+	return b.String()
+}
+
+func (d testMM) add1(key1 int, key2 string, value []int) testMM {
+	if len(d) == 0 {
+		d = make(testMM)
+	}
+	if _, has := d[key1]; !has {
+		d[key1] = make(map[string][]int)
+	}
+	d[key1][key2] = value
+	return d
+}
+
+func testMMAdd1() {
+	var d testMM
+	d = d.add1(1, "a", []int{1, 2}).
+		add1(2, "a", []int{3, 4}).
+		add1(1, "b", []int{5, 6}).
+		add1(1, "a", []int{10, 20, 30}).
+		add1(3, "c", []int{3, 4}).
+		add1(4, "d", []int{13, 14})
+	fmt.Println("add1:\n", d)
+}
+
+func (d testMM) add2(key1 int, key2 string, value []int) {
+	if len(d) == 0 {
+		d = make(testMM)
+	}
+	if _, has := d[key1]; !has {
+		d[key1] = make(map[string][]int)
+	}
+	d[key1][key2] = value
+}
+
+func testMMAdd2() {
+	d := new(testMM)
+	d.add2(1, "a", []int{1, 2})
+	d.add2(2, "a", []int{3, 4})
+	d.add2(1, "b", []int{5, 6})
+	d.add2(1, "a", []int{10, 20, 30})
+	d.add2(3, "c", []int{3, 4})
+	d.add2(4, "d", []int{13, 14})
+	fmt.Println("add2:\n", d)
+}
+
+func testMMAdd2_() {
+	var d testMM
+	d.add2(1, "a", []int{1, 2})
+	d.add2(2, "a", []int{3, 4})
+	d.add2(1, "b", []int{5, 6})
+	d.add2(1, "a", []int{10, 20, 30})
+	d.add2(3, "c", []int{3, 4})
+	d.add2(4, "d", []int{13, 14})
+	fmt.Println("add2_:\n", d)
+}
+
+func (d *testMM) add3(key1 int, key2 string, value []int) {
+	if d == nil {
+		d = new(testMM)
+	}
+	if len(*d) == 0 {
+		*d = make(testMM)
+	}
+
+	if _, has := (*d)[key1]; !has {
+		(*d)[key1] = make(map[string][]int)
+	}
+	(*d)[key1][key2] = value
+}
+
+func testMMAdd3() {
+	var d testMM
+	d.add3(1, "a", []int{1, 2})
+	d.add3(2, "a", []int{3, 4})
+	d.add3(1, "b", []int{5, 6})
+	d.add3(1, "a", []int{10, 20, 30})
+	d.add3(3, "c", []int{3, 4})
+	d.add3(4, "d", []int{13, 14})
+	fmt.Println("add3:\n", d)
+}
+
+func testMMAdd3_() {
+	var d *testMM
+	d.add3(1, "a", []int{1, 2})
+	d.add3(2, "a", []int{3, 4})
+	d.add3(1, "b", []int{5, 6})
+	d.add3(1, "a", []int{10, 20, 30})
+	d.add3(3, "c", []int{3, 4})
+	d.add3(4, "d", []int{13, 14})
+	fmt.Println("add3_:\n", d)
+}
+
+func (d *testMM) add4(key1 int, key2 string, value []int) *testMM {
+	if d == nil {
+		d = new(testMM)
+
+	}
+	if len(*d) == 0 {
+		*d = make(testMM)
+	}
+	if _, has := (*d)[key1]; !has {
+		(*d)[key1] = make(map[string][]int)
+	}
+	(*d)[key1][key2] = value
+	return d
+}
+
+func testMMAdd4() {
+	var d testMM
+	d.add4(1, "a", []int{1, 2}).
+		add4(2, "a", []int{3, 4}).
+		add4(1, "b", []int{5, 6}).
+		add4(1, "a", []int{10, 20, 30}).
+		add4(3, "c", []int{3, 4}).
+		add4(4, "d", []int{13, 14})
+	fmt.Println("add4:\n", d)
+}
+
+func testMMAdd4_() {
+	var d *testMM
+	d = d.add4(1, "a", []int{1, 2}).
+		add4(2, "a", []int{3, 4}).
+		add4(1, "b", []int{5, 6}).
+		add4(1, "a", []int{10, 20, 30}).
+		add4(3, "c", []int{3, 4}).
+		add4(4, "d", []int{13, 14})
+	fmt.Println("add4_:\n", d)
+}
+
+func testMMAdd() {
+	testMMAdd1()
+	testMMAdd2()
+	testMMAdd2_()
+	testMMAdd3()
+	testMMAdd3_()
+	testMMAdd4()
+	testMMAdd4_()
 }

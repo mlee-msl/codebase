@@ -1,7 +1,17 @@
 package main
 
+import (
+	"fmt"
+	"runtime"
+)
+
 func main() {
+	fmt.Println("CPU:-----", runtime.NumCPU(), "\n")
+	// TestBoolean()
+	// testIface()
 	// testMap()
+	// testStr()
+	// TestSli()
 	// testSlice1()
 	// testSlice2()
 	// testSlice3()
@@ -46,6 +56,16 @@ func main() {
 	// testTicker()
 	// testIOTA()
 	// TestObjSize()
-	TestSyncPool()
+	// TestSyncPool()
 	// TestNonPool()
+	// TestDiff()
+	// fff()
+	// testSize()
+	// getAllMonthLastDay(2024)
+	// EqualSli([]int{1, 2, 3}, []int{1, 2,3})
+	// EqualSli([]int{1, 2, 3}, []int{1, 3,2})
+	// testStringFunc()
+	// testDeferOrder()
+	// testWaitGroup()
+	testMMAdd()
 }

@@ -83,3 +83,17 @@ func BenchmarkTestSyncPool2(b *testing.B) {
 		TestSyncPool2()
 	}
 }
+
+func BenchmarkTestSyncPool3(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TestSyncPool3()
+	}
+}
+
+func BenchmarkTestSyncPool4(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TestSyncPool4()
+	}
+}
