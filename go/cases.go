@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/bits"
 	"math/rand"
 	"reflect"
@@ -477,6 +479,17 @@ func testSortBool(bools []bool) {
 	fmt.Println(bools)
 }
 
+func testSortTime() {
+	var (
+		now = time.Now()
+		ts  = []time.Time{now.AddDate(0, 0, 10), now.AddDate(0, 0, 8), now.AddDate(0, 0, 2), now.AddDate(0, 0, 5)}
+	)
+	sort.Slice(ts, func(i int, j int) bool {
+		return ts[i].After(ts[j])
+	})
+	fmt.Println(ts)
+}
+
 func testError() {
 	fmt.Println(errC())
 	fmt.Println(errD())
@@ -530,13 +543,12 @@ func testDefer() {
 	setup := func() {
 		fmt.Println("setup")
 	}
-	f := func() func() {
+	defer func() func() {
 		setup()
 		return func() {
 			fmt.Println("tear down")
 		}
-	}
-	defer f()()
+	}()()
 	fmt.Println("test defer")
 }
 
@@ -1994,14 +2006,201 @@ func testMMAdd() {
 	testMMAdd4_()
 }
 
-
 func testMapInit() {
 	f := func(m map[int]int) {
 		fmt.Println(m == nil, len(m)) // map类型没有cap函数
 	}
 	var m0 map[int]int
-	f(m0) // case 0
-	f(make(map[int]int)) // case 2
+	f(m0)                   // case 0
+	f(make(map[int]int))    // case 2
 	f(make(map[int]int, 2)) // case 3
 	// 如何区分出 case2 和 case3
+}
+
+func testCalculation() {
+	a := 1.0 * 2 * 3.0
+	fmt.Println(18/a, 18/2*3.0)
+	v := 18 / a
+	fmt.Printf("%f, %v, %+v, %T\n", v, v, v, v)
+}
+
+type MarketType = byte
+
+const (
+	MarketUndefined MarketType = iota // 占位零值，不采用
+	MarketCN                          // A股市场
+	MarketHK                          // 港股市场
+	MarketUS                          // 美股市场
+	MarketSG                          // 新加坡市场
+	MarketCA                          // 加拿大市场
+	MarketAU                          // 澳大利亚市场
+	MarketJP                          // 日本市场
+	MarketMY                          // 马来西亚市场
+)
+
+// MarketTimezone 市场和其对应的时区映射
+var MarketTimezone = map[MarketType]string{
+	MarketCN: "Asia/Shanghai",
+	MarketHK: "Asia/Hong_Kong",
+	MarketUS: "America/New_York",
+	MarketSG: "Asia/Singapore",
+	MarketCA: "America/Toronto",
+	MarketAU: "Australia/Sydney",
+	MarketJP: "Asia/Tokyo",
+	MarketMY: "Asia/Kuala_Lumpur",
+}
+
+func test_getLastDayOfYearMonth(year int) {
+	for m := time.January; m <= time.December; m++ {
+		getLastDayOfYearMonth(MarketCN, year, m)
+	}
+}
+
+func getLastDayOfYearMonth(typ MarketType, year int, month time.Month) {
+	loc := time.UTC
+	if dstTZStr, has := MarketTimezone[typ]; has {
+		if loc_, err := time.LoadLocation(dstTZStr); err == nil {
+			loc = loc_
+		}
+	}
+	t := time.Date(year, month+1, 0, 0, 0, 0, 0, loc)
+	fmt.Println(t, t.Unix()) // 计算下一个月的第0天，即本月的最后一天
+}
+
+func testSyncMap() {
+	var (
+		isNotEmpty1 bool
+		isNotEmpty2 bool
+		isNotEmpty3 bool
+		m           sync.Map
+	)
+	m.Range(func(_, _ any) bool {
+		fmt.Println("isNotEmpty1 range")
+		isNotEmpty1 = true
+		return false // 停止迭代
+	})
+	m.Store(1, [0]struct{}{})
+	m.Store(1, [0]struct{}{})
+	m.Store(11, [0]struct{}{})
+	m.Store(111, [0]struct{}{})
+	m.Range(func(_, _ any) bool {
+		fmt.Println("isNotEmpty2,3 range")
+		isNotEmpty2 = true
+		isNotEmpty3 = true
+		return false
+	})
+	_, ok := m.Load(11)
+	fmt.Println("11", ok)
+	fmt.Println(isNotEmpty1, isNotEmpty2, isNotEmpty3)
+
+	clearSyncMap(m)
+
+	m.Range(func(_, _ any) bool {
+		isNotEmpty3 = true
+		fmt.Println("isNotEmpty3 range")
+		return false // 停止迭代
+	})
+	fmt.Println(isNotEmpty1, isNotEmpty2, isNotEmpty3)
+	_, ok = m.Load(11)
+	fmt.Println("11", ok)
+}
+
+func clearSyncMap(m sync.Map) {
+	m.Range(func(key, _ any) bool {
+		m.Delete(key)
+		return true // 继续迭代
+	})
+}
+
+func testFormatTime() {
+	// func (t Time) Format(layout string) string  标准库中这个方法（包）是真的复杂，圈复杂度爆表！！！
+	fmt.Println(time.Now().Format("200601"), time.Now().Format(time.DateOnly))
+}
+
+func testSyncSafetyForSlice() {
+	type s struct {
+		a int
+		b string
+	}
+	const nums = 10
+	var (
+		sli = make([]s, nums)
+		wg  sync.WaitGroup
+	)
+	for i := 0; i < nums; i++ {
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			sli[index].a = i * 10
+			sli[index].b = strconv.Itoa(i * 10)
+		}(i)
+	}
+	wg.Wait()
+
+	fmt.Println(sli)
+}
+
+func TestTime() {
+	now := time.Now()
+	fmt.Println(now)
+	fmt.Println(now.Truncate(24 * time.Hour))
+	fmt.Println(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+
+	t := now.Add(2 * time.Hour)
+	fmt.Println(now, t)
+	t1, t2 := TimeOnlyContainsYMD(MarketCN, now), TimeOnlyContainsYMD(MarketCN, t)
+	fmt.Println(t1, t2, t1.Equal(t2))
+
+}
+
+var marketTimezone = map[MarketType]string{
+	MarketCN: "Asia/Shanghai",
+	MarketHK: "Asia/Hong_Kong",
+	MarketUS: "America/New_York",
+	MarketSG: "Asia/Singapore",
+	MarketCA: "America/Toronto",
+	MarketAU: "Australia/Sydney",
+	MarketJP: "Asia/Tokyo",
+	MarketMY: "Asia/Kuala_Lumpur",
+}
+
+func TimeOnlyContainsYMD(typ MarketType, t time.Time) time.Time {
+	loc, _ := time.LoadLocation(marketTimezone[typ])
+	if loc == nil {
+		loc = time.UTC
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+}
+
+func testRound() {
+	fmt.Println(math.Round(0.3), math.Round(0.5), math.Round(0.7), math.Round(2.3), math.Round(2.5), math.Round(2.6))
+}
+
+func testJSON() {
+	type a struct {
+		A1 *int
+		A2 *string
+		A3 int
+		A4 string
+		A5 int
+	}
+	d1, d2 := 0, "mleee"
+	d := &a{A1: &d1, A4: d2, A3: 0}
+	bs, _ := json.Marshal(d)
+	var dd *a
+	fmt.Println(&dd) // nil 变量可以取其地址
+	json.Unmarshal(bs, &dd)
+	fmt.Printf("%+v\n%+v\n", dd, *dd)
+}
+
+func TestOverflow() {
+	f := 18346963000000000.000000
+	i := int64(f)
+	ii := uint64(f)
+	fmt.Println(f, i, i*1e3, ii*1e3)
+	fmt.Println(2596039000.000000/183469630000000.000000, (2596039000000.000000-2406557000.000000)/2406557000.000000)
+	fmt.Println(math.MaxInt64)
+	
+	// https://blog.csdn.net/raoxiaoya/article/details/129158263
+	fmt.Println(math.Round(0.4999999), math.Round(23.51), math.Round(0.51), math.RoundToEven(0.51), math.RoundToEven(0.5), math.RoundToEven(0.61))
 }
